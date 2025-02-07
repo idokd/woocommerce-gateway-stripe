@@ -44,6 +44,7 @@
 * Tweak - Improve slow query for legacy SEPA subscriptions on WC status tools page by caching the data.
 * Tweak - Improve settings page load by delaying oauth URL generation.
 * Tweak - Update the Woo logo in the Configure connection modal
+* Add - Add currency restriction pill on Amazon Pay.
 
 = 9.1.1 - 2025-01-10 =
 * Fix - Fixes the webhook order retrieval by intent charges. The processed event is an object, not an array.
