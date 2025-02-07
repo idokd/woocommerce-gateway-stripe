@@ -111,6 +111,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 9.2.0 - xxxx-xx-xx =
+* Dev - Add new E2E tests for Link express checkout.
 * Add - Add Amazon Pay to block cart and block checkout.
 * Fix - Remove intentional delay when displaying tax-related notice for express checkout, causing click event to time out.
 * Fix - Fixes an issue when saving Bancontact and iDEAL methods with SEPA Direct Debit disabled.
