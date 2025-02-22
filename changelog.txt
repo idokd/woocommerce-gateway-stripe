@@ -14,6 +14,7 @@
 * Dev - Fix changelog action
 * Tweak - Map feature flags into a standard array for easier maintenance.
 * Dev - Fix QIT Tests GitHub workflow.
+* Fix - Fix issue where payment methods do not refresh after address changes.
 
 = 9.2.0 - 2025-02-13 =
 * Fix - Fix missing product_id parameter for the express checkout add-to-cart operation.
