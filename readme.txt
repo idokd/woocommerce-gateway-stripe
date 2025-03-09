@@ -142,6 +142,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - ACSS: Handle errors and edge cases.
 * Add - Add subscriptions support to Bacs.
 * Update - Add tracks events for payment method settings updates.
+* Fix - Fix issue where Legacy Checkout settings get overwritten with old value.
 * Add - Add WooCommerce Pre-Orders support to Bacs.
 * Tweak - Fix background in express checkout settings.
 
