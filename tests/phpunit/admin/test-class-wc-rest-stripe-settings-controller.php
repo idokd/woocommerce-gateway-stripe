@@ -37,6 +37,12 @@ class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 
 		$upe_helper = new UPE_Test_Helper();
 
+		// Enable Bacs for tests.
+		update_option( WC_Stripe_Feature_Flags::LPM_BACS_FEATURE_FLAG_NAME, 'yes' );
+
+		// Enable ACH
+		update_option( WC_Stripe_Feature_Flags::LPM_ACH_FEATURE_FLAG_NAME, 'yes' );
+
 		// All tests assume UPE is enabled.
 		update_option( '_wcstripe_feature_upe', 'yes' );
 		$upe_helper->enable_upe();
@@ -48,6 +54,9 @@ class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 	 * Pre-test setup
 	 */
 	public function set_up() {
+		global $wp_rest_server;
+		$wp_rest_server = null;
+
 		parent::set_up();
 
 		if ( version_compare( WC_VERSION, '3.4.0', '<' ) ) {
@@ -58,6 +67,13 @@ class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 
 		// Set the user so that we can pass the authentication.
 		wp_set_current_user( 1 );
+	}
+
+	public function tear_down() {
+		parent::tear_down();
+
+		delete_option( WC_Stripe_Feature_Flags::LPM_BACS_FEATURE_FLAG_NAME );
+		delete_option( WC_Stripe_Feature_Flags::LPM_ACH_FEATURE_FLAG_NAME );
 	}
 
 	/**
@@ -122,13 +138,13 @@ class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 					'bancontact_payments' => 'active',
 					'card_payments'       => 'active',
 					'eps_payments'        => 'active',
-					'alipay_payments'            => 'active',
-					'ideal_payments'             => 'active',
-					'p24_payments'               => 'active',
-					'sepa_debit_payments'        => 'active',
-					'boleto_payments'            => 'active',
-					'oxxo_payments'              => 'active',
-					'link_payments'              => 'active',
+					'alipay_payments'     => 'active',
+					'ideal_payments'      => 'active',
+					'p24_payments'        => 'active',
+					'sepa_debit_payments' => 'active',
+					'boleto_payments'     => 'active',
+					'oxxo_payments'       => 'active',
+					'link_payments'       => 'active',
 				],
 			]
 		);
@@ -216,42 +232,34 @@ class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_settings_returns_available_payment_method_ids() {
-		//link is available only in US
-		WC_Stripe::get_instance()->account = $this->getMockBuilder( 'WC_Stripe_Account' )
-													->disableOriginalConstructor()
-													->setMethods(
-														[
-															'get_cached_account_data',
-														]
-													)
-													->getMock();
-
-		WC_Stripe::get_instance()->account->method( 'get_cached_account_data' )->willReturn(
-			[
-				'country'      => 'US',
-				'capabilities' => [
-					'bancontact_payments'        => 'active',
-					'card_payments'              => 'active',
-					'eps_payments'               => 'active',
-					'giropay_payments'           => 'active',
-					'ideal_payments'             => 'active',
-					'p24_payments'               => 'active',
-					'sepa_debit_payments'        => 'active',
-					'boleto_payments'            => 'active',
-					'oxxo_payments'              => 'active',
-					'link_payments'              => 'active',
-				],
-			]
-		);
 		$response = $this->rest_get_settings();
 
-		$expected_method_ids  = array_keys( $this->get_gateway()->payment_methods );
+		$expected_method_ids  = [
+			WC_Stripe_Payment_Methods::CARD,
+			WC_Stripe_Payment_Methods::ACH,
+			WC_Stripe_Payment_Methods::ALIPAY,
+			WC_Stripe_Payment_Methods::KLARNA,
+			WC_Stripe_Payment_Methods::AFFIRM,
+			WC_Stripe_Payment_Methods::AFTERPAY_CLEARPAY,
+			WC_Stripe_Payment_Methods::EPS,
+			WC_Stripe_Payment_Methods::BANCONTACT,
+			WC_Stripe_Payment_Methods::BOLETO,
+			WC_Stripe_Payment_Methods::IDEAL,
+			WC_Stripe_Payment_Methods::OXXO,
+			WC_Stripe_Payment_Methods::SEPA_DEBIT,
+			WC_Stripe_Payment_Methods::P24,
+			WC_Stripe_Payment_Methods::MULTIBANCO,
+			// 'link', // Link is excluded as it is a express method.
+			WC_Stripe_Payment_Methods::WECHAT_PAY,
+			WC_Stripe_Payment_Methods::CASHAPP_PAY,
+		];
 		$available_method_ids = $response->get_data()['available_payment_method_ids'];
 
 		$this->assertEquals(
 			$expected_method_ids,
 			$available_method_ids
 		);
+		$this->assertNotContains( WC_Stripe_Payment_Methods::BACS_DEBIT, $available_method_ids );
 	}
 
 	public function test_get_settings_returns_ordered_payment_method_ids() {
@@ -260,40 +268,48 @@ class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 													->setMethods(
 														[
 															'get_cached_account_data',
+															'get_account_country',
 														]
 													)
 													->getMock();
 
 		WC_Stripe::get_instance()->account->method( 'get_cached_account_data' )->willReturn(
 			[
-				'country' => 'US',
-				'capabilities' => [
-					'bancontact_payments'        => 'active',
-					'card_payments'              => 'active',
-					'eps_payments'               => 'active',
-					'giropay_payments'           => 'active',
-					'ideal_payments'             => 'active',
-					'p24_payments'               => 'active',
-					'sepa_debit_payments'        => 'active',
-					'boleto_payments'            => 'active',
-					'oxxo_payments'              => 'active',
-					'link_payments'              => 'active',
-				],
+				'country'      => 'US',
+				'capabilities' => [],
 			]
 		);
-		$response = $this->rest_get_settings();
 
-		$expected_methods = $this->get_gateway()->payment_methods;
+		WC_Stripe::get_instance()->account->method( 'get_account_country' )->willReturn( 'US' );
 
-		unset( $expected_methods['link'] );
+		$expected_method_ids = [
+			WC_Stripe_Payment_Methods::CARD,
+			WC_Stripe_Payment_Methods::ACH,
+			WC_Stripe_Payment_Methods::ALIPAY,
+			WC_Stripe_Payment_Methods::KLARNA,
+			WC_Stripe_Payment_Methods::AFFIRM,
+			WC_Stripe_Payment_Methods::AFTERPAY_CLEARPAY,
+			WC_Stripe_Payment_Methods::EPS,
+			WC_Stripe_Payment_Methods::BANCONTACT,
+			WC_Stripe_Payment_Methods::BOLETO,
+			WC_Stripe_Payment_Methods::IDEAL,
+			WC_Stripe_Payment_Methods::OXXO,
+			WC_Stripe_Payment_Methods::SEPA_DEBIT,
+			WC_Stripe_Payment_Methods::P24,
+			WC_Stripe_Payment_Methods::MULTIBANCO,
+			// 'link', // Link is excluded as it is a express method.
+			WC_Stripe_Payment_Methods::WECHAT_PAY,
+			WC_Stripe_Payment_Methods::CASHAPP_PAY,
+		];
 
-		$expected_method_ids = array_keys( $expected_methods );
-		$ordered_method_ids  = $response->get_data()['ordered_payment_method_ids'];
+		$response           = $this->rest_get_settings();
+		$ordered_method_ids = $response->get_data()['ordered_payment_method_ids'];
 
 		$this->assertEquals(
 			$expected_method_ids,
 			$ordered_method_ids
 		);
+		$this->assertNotContains( WC_Stripe_Payment_Methods::BACS_DEBIT, $ordered_method_ids );
 	}
 
 	public function test_get_settings_fails_if_user_cannot_manage_woocommerce() {
@@ -341,6 +357,7 @@ class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 			'is_test_mode_enabled'                  => [ 'is_test_mode_enabled', 'testmode' ],
 			'is_payment_request_enabled'            => [ 'is_payment_request_enabled', 'payment_request' ],
 			'is_amazon_pay_enabled'                 => [ 'is_amazon_pay_enabled', 'amazon_pay' ],
+			'is_spe_enabled'                        => [ 'is_spe_enabled', 'single_payment_element' ],
 			'is_manual_capture_enabled'             => [ 'is_manual_capture_enabled', 'capture', true ],
 			'is_saved_cards_enabled'                => [ 'is_saved_cards_enabled', 'saved_cards' ],
 			'is_separate_card_form_enabled'         => [ 'is_separate_card_form_enabled', 'inline_cc_form', true ],

@@ -33,7 +33,7 @@ const getStripeServerData = () => {
 		typeof wc.wcSettings !== 'undefined'
 	) {
 		// 'getSetting' has this data value on block checkout only.
-		data = wc.wcSettings?.getSetting( 'getSetting' ) || null;
+		data = wc.wcSettings?.getSetting( 'stripe_data' ) || null;
 	}
 
 	if ( ! data ) {
@@ -303,9 +303,29 @@ export const generateCheckoutEventNames = () => {
 		.join( ' ' );
 };
 
+/**
+ * Appends a payment method ID to the form.
+ *
+ * @param {Object} form The jQuery form object.
+ * @param {string} paymentMethodId The payment method ID to append to the form.
+ */
 export const appendPaymentMethodIdToForm = ( form, paymentMethodId ) => {
+	// If the element already exists, remove it first, to avoid duplicates.
+	// This can happen if the payment is retried, e.g. entering a new card
+	// after a previous card was declined.
+	const existingElement = form.find( 'input#wc-stripe-payment-method' );
+	if ( existingElement.length ) {
+		existingElement.remove();
+	}
+
 	form.append(
 		`<input type="hidden" id="wc-stripe-payment-method" name="wc-stripe-payment-method" value="${ paymentMethodId }" />`
+	);
+};
+
+export const appendPaymentIntentIdToForm = ( form, paymentIntentId ) => {
+	form.append(
+		`<input type="hidden" id="wc_payment_intent_id" name="wc_payment_intent_id" value="${ paymentIntentId }" />`
 	);
 };
 
@@ -379,9 +399,9 @@ export const getHiddenBillingFields = ( enabledBillingFields ) => {
 		email: enabledBillingFields.includes( 'billing_email' )
 			? 'never'
 			: 'auto',
-		phone: enabledBillingFields.includes( 'billing_phone' )
-			? 'never'
-			: 'auto',
+		// The phone field is optional, so it needs to be "auto" to not throw errors
+		// when passing the phone parameter to create a payment method.
+		phone: 'auto',
 		address: {
 			country: enabledBillingFields.includes( 'billing_country' )
 				? 'never'
@@ -456,11 +476,17 @@ export const getDefaultValues = () => {
 
 /**
  * Show error notice at top of checkout form.
- * Will try to use a translatable message using the message code if available
+ * Will try to use a translatable message using the message code if available.
  *
  * @param {string} errorMessage
  */
 export const showErrorCheckout = ( errorMessage ) => {
+	const $container = jQuery( '.woocommerce-notices-wrapper' ).first();
+
+	if ( ! $container.length ) {
+		return;
+	}
+
 	if (
 		typeof errorMessage !== 'string' &&
 		! ( errorMessage instanceof String )
@@ -489,24 +515,73 @@ export const showErrorCheckout = ( errorMessage ) => {
 			errorMessage +
 			'</li></ul>';
 	}
-	const $container = jQuery( '.woocommerce-notices-wrapper' ).first();
-
-	if ( ! $container.length ) {
-		return;
-	}
 
 	// Adapted from WooCommerce core @ ea9aa8c, assets/js/frontend/checkout.js#L514-L529
-	jQuery(
-		'.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message'
-	).remove();
+	$container
+		.find(
+			'.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message'
+		)
+		.remove();
 	$container.prepend( messageWrapper );
-	jQuery( 'form.checkout' )
-		.find( '.input-text, select, input:checkbox' )
-		.trigger( 'validate' )
-		.trigger( 'blur' );
+
+	const $fields = jQuery( 'form.checkout' ).find(
+		'.input-text, select, input:checkbox'
+	);
+
+	if ( $fields.length ) {
+		$fields.each( function () {
+			try {
+				jQuery( this ).trigger( 'validate' ).trigger( 'blur' );
+			} catch ( e ) {} // Don't break trying to validate fields.
+		} );
+	}
 
 	jQuery.scroll_to_notices( $container );
 	jQuery( document.body ).trigger( 'checkout_error' );
+};
+
+/**
+ * Show an error notice inside a specific payment method container.
+ * Will try to use a translatable message using the message code if available.
+ *
+ * @param {string|Object} errorMessage - The error message or error object.
+ * @param {string} containerSelector   - Selector for the container where the error should be appended.
+ */
+export const showErrorPaymentMethod = ( errorMessage, containerSelector ) => {
+	const $container = jQuery( containerSelector ).first();
+
+	if ( ! $container.length ) {
+		// If the container doesn't exist, do nothing.
+		return;
+	}
+
+	if (
+		typeof errorMessage !== 'string' &&
+		! ( errorMessage instanceof String )
+	) {
+		if ( errorMessage.code && getStripeServerData()[ errorMessage.code ] ) {
+			errorMessage = getStripeServerData()[ errorMessage.code ];
+		} else {
+			errorMessage = errorMessage.message;
+		}
+	}
+
+	let messageWrapper = '';
+	if ( errorMessage.includes( 'woocommerce-error' ) ) {
+		messageWrapper = errorMessage;
+	} else {
+		messageWrapper = `
+			<ul class="woocommerce-error" role="alert">
+				<li>${ errorMessage }</li>
+			</ul>
+		`;
+	}
+
+	// Remove any existing `.woocommerce-error` elements within this container
+	// so we don't stack multiple copies.
+	$container.find( '.woocommerce-error' ).remove();
+
+	$container.prepend( messageWrapper );
 };
 
 /**
@@ -554,7 +629,7 @@ export const getPaymentMethodName = ( paymentMethodType ) => {
  *
  * @param {Object} upeElement The selector of the DOM element of particular payment method to mount the UPE element to.
  * @return {boolean} Whether the payment method is restricted to selected billing country.
- **/
+ */
 export const isPaymentMethodRestrictedToLocation = ( upeElement ) => {
 	const paymentMethodsConfig =
 		getStripeServerData()?.paymentMethodsConfig || {};
@@ -563,8 +638,21 @@ export const isPaymentMethodRestrictedToLocation = ( upeElement ) => {
 };
 
 /**
+ * Determines if the payment method supports deferred intent.
+ *
  * @param {Object} upeElement The selector of the DOM element of particular payment method to mount the UPE element to.
- **/
+ * @return {boolean} Whether the payment method supports deferred intent.
+ */
+export const paymentMethodSupportsDeferredIntent = ( upeElement ) => {
+	const paymentMethodsConfig =
+		getStripeServerData()?.paymentMethodsConfig || {};
+	const paymentMethodType = upeElement.dataset.paymentMethodType;
+	return !! paymentMethodsConfig[ paymentMethodType ]?.supportsDeferredIntent;
+};
+
+/**
+ * @param {Object} upeElement The selector of the DOM element of particular payment method to mount the UPE element to.
+ */
 export const togglePaymentMethodForCountry = ( upeElement ) => {
 	const paymentMethodsConfig =
 		getStripeServerData()?.paymentMethodsConfig || {};
@@ -585,6 +673,14 @@ export const togglePaymentMethodForCountry = ( upeElement ) => {
 		upeContainer.style.display = 'block';
 	} else {
 		upeContainer.style.display = 'none';
+		// Also uncheck the radio button if it's selected.
+		const radioButton = document.querySelector(
+			`input[name="payment_method"][value="stripe_${ paymentMethodType }"]`
+		);
+
+		if ( radioButton ) {
+			radioButton.checked = false;
+		}
 	}
 };
 
