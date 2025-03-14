@@ -113,5 +113,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 = 9.3.1 - xxxx-xx-xx =
 * Fix - Temporarily disables the subscriptions detached notice feature due to long loading times on stores with many subscriptions.
 * Fix - Update ACH capability check key
+* Fix - Update legacy checkout documentation links and deprecation notice display logic
 
 [See changelog for all versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).

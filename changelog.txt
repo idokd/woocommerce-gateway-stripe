@@ -3,6 +3,7 @@
 = 9.3.1 - xxxx-xx-xx =
 * Fix - Temporarily disables the subscriptions detached notice feature due to long loading times on stores with many subscriptions.
 * Fix - Update ACH capability check key
+* Fix - Update legacy checkout documentation links and deprecation notice display logic
 
 = 9.3.0 - 2025-03-13 =
 * Dev - Adds a new README.md file to the plugin with specific development-focused instructions.
