@@ -469,6 +469,14 @@ class WC_Stripe_Admin_Notices {
 	 * @return void
 	 */
 	public function subscriptions_check_environment() {
+		// @todo Temporarily disabling this due long load times on stores with too many subscriptions.
+		return;
+
+		$show_notice = get_option( 'wc_stripe_show_subscriptions_notice' );
+		if ( 'yes' !== $show_notice ) {
+			return;
+		}
+
 		$detached_messages = '';
 		$subscriptions     = WC_Stripe_Subscriptions_Helper::get_detached_subscriptions();
 		foreach ( $subscriptions as $subscription ) {
@@ -476,7 +484,7 @@ class WC_Stripe_Admin_Notices {
 				'<a href="%s">%s</a>',
 				esc_url( $subscription['change_payment_method_url'] ),
 				esc_html(
-					/* translators: this is a text for a link pointing to the customer's payment method page */
+				/* translators: this is a text for a link pointing to the customer's payment method page */
 					__( 'this link &rarr;', 'woocommerce-gateway-stripe' )
 				)
 			);
@@ -484,7 +492,7 @@ class WC_Stripe_Admin_Notices {
 				'<a href="%s">%s</a>',
 				esc_url( self::STRIPE_CUSTOMER_PAGE_BASE_URL . $subscription['customer_id'] ),
 				esc_html(
-					/* translators: this is a text for a link pointing to the customer's page on Stripe */
+				/* translators: this is a text for a link pointing to the customer's page on Stripe */
 					__( 'here &rarr;', 'woocommerce-gateway-stripe' )
 				)
 			);
@@ -496,8 +504,7 @@ class WC_Stripe_Admin_Notices {
 				$customer_stripe_page
 			);
 		}
-		$show_notice = get_option( 'wc_stripe_show_subscriptions_notice' );
-		if ( ! empty( $detached_messages ) && 'no' !== $show_notice ) {
+		if ( ! empty( $detached_messages ) ) {
 			$this->add_admin_notice( 'subscriptions', 'notice notice-error', $detached_messages, true );
 		}
 	}

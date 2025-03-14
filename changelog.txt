@@ -1,5 +1,8 @@
 *** Changelog ***
 
+= 9.3.1 - xxxx-xx-xx =
+* Fix - Temporarily disables the subscriptions detached notice feature due to long loading times on stores with too many subscriptions.
+
 = 9.3.0 - 2025-03-13 =
 * Dev - Adds a new README.md file to the plugin with specific development-focused instructions.
 * Add - Implements the Single Payment Element feature for the new checkout experience on the block checkout page.
