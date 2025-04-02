@@ -151,6 +151,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Add - Add WooCommerce Pre-Orders support to ACSS.
 * Fix - Add `wc_stripe_generate_create_intent_request` filter to support mandate information in setup intent creation.
 * Update - Remove unused shopper tracking
+* Add - Add BLIK support for WooCommerce Pre-Orders
 * Tweak - Add save payment method parameter to update intent call for non-deferred intent payment methods.
 * Fix - Checkout page focus loss
 * Fix - Updated payment method radio button selector to correctly find the selected payment method in different themes.
