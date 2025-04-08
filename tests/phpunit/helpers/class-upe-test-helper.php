@@ -4,6 +4,16 @@
  * Provides methods useful when testing UPE-related logic.
  */
 class UPE_Test_Helper {
+	/**
+	 * Creates a mock object for the specified class
+	 *
+	 * @param string $class_name Name of the class to mock
+	 * @return PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function create_mock( $class_name ) {
+		$mock_builder = new PHPUnit\Framework\MockObject\Generator();
+		return $mock_builder->getMock( $class_name );
+	}
 
 	public function enable_upe_feature_flag() {
 		// Force the UPE feature flag on.
