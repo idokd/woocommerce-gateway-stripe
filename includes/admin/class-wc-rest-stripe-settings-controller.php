@@ -263,7 +263,7 @@ class WC_REST_Stripe_Settings_Controller extends WC_Stripe_REST_Base_Controller 
 				/* Settings > Express checkouts */
 				'amazon_pay_button_size'                   => $this->gateway->get_validated_option( 'amazon_pay_button_size' ),
 				'amazon_pay_button_locations'              => $this->gateway->get_validated_option( 'amazon_pay_button_locations' ),
-				'is_payment_request_enabled'               => 'yes' === $this->gateway->get_option( 'payment_request' ),
+				'is_payment_request_enabled'               => $this->gateway->is_payment_request_enabled(),
 				'payment_request_button_type'              => $this->gateway->get_validated_option( 'payment_request_button_type' ),
 				'payment_request_button_theme'             => $this->gateway->get_validated_option( 'payment_request_button_theme' ),
 				'payment_request_button_size'              => $this->gateway->get_validated_option( 'payment_request_button_size' ),
@@ -294,12 +294,15 @@ class WC_REST_Stripe_Settings_Controller extends WC_Stripe_REST_Base_Controller 
 		$this->update_is_stripe_enabled( $request );
 		$this->update_is_test_mode_enabled( $request );
 
-		/* Settings > Payments accepted on checkout */
-		$this->update_enabled_payment_methods( $request );
+		/* Settings > Payments accepted on checkout + Express checkouts */
+		$payment_method_ids_to_enable = $this->get_payment_method_ids_to_enable( $request );
+		$is_upe_enabled               = $request->get_param( 'is_upe_enabled' );
+		$this->update_enabled_payment_methods( $payment_method_ids_to_enable, $is_upe_enabled );
+		if ( ! $is_upe_enabled ) {
+			// We need to update a separate setting for legacy checkout.
+			$this->update_is_payment_request_enabled_for_legacy_checkout( $request );
+		}
 		$this->update_individual_payment_method_settings( $request );
-
-		/* Settings > Express checkouts */
-		$this->update_is_payment_request_enabled( $request );
 		$this->update_payment_request_settings( $request );
 		$this->update_amazon_pay_settings( $request );
 
@@ -316,6 +319,28 @@ class WC_REST_Stripe_Settings_Controller extends WC_Stripe_REST_Base_Controller 
 		$this->update_is_spe_enabled( $request );
 
 		return new WP_REST_Response( [], 200 );
+	}
+
+	/**
+	 * Returns the payment method IDs to enable.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 *
+	 * @return string[]
+	 */
+	private function get_payment_method_ids_to_enable( WP_REST_Request $request ) {
+		$payment_method_ids_to_enable = $request->get_param( 'enabled_payment_method_ids' );
+		$is_upe_enabled               = $request->get_param( 'is_upe_enabled' );
+		$is_payment_request_enabled   = $request->get_param( 'is_payment_request_enabled' );
+
+		if ( $is_upe_enabled && $is_payment_request_enabled ) {
+			$payment_method_ids_to_enable = array_merge(
+				$payment_method_ids_to_enable,
+				[ WC_Stripe_Payment_Methods::APPLE_PAY, WC_Stripe_Payment_Methods::GOOGLE_PAY ]
+			);
+		}
+
+		return $payment_method_ids_to_enable;
 	}
 
 	/**
@@ -393,7 +418,11 @@ class WC_REST_Stripe_Settings_Controller extends WC_Stripe_REST_Base_Controller 
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 */
-	private function update_is_payment_request_enabled( WP_REST_Request $request ) {
+	private function update_is_payment_request_enabled_for_legacy_checkout( WP_REST_Request $request ) {
+		if ( $request->get_param( 'is_upe_enabled' ) ) {
+			return;
+		}
+
 		$is_payment_request_enabled = $request->get_param( 'is_payment_request_enabled' );
 
 		if ( null === $is_payment_request_enabled ) {
@@ -594,12 +623,10 @@ class WC_REST_Stripe_Settings_Controller extends WC_Stripe_REST_Base_Controller 
 	/**
 	 * Updates the list of enabled payment methods.
 	 *
-	 * @param WP_REST_Request $request Request object.
+	 * @param array $payment_method_ids_to_enable The list of payment method ids to enable.
+	 * @param bool $is_upe_enabled Whether UPE is enabled.
 	 */
-	private function update_enabled_payment_methods( WP_REST_Request $request ) {
-		$payment_method_ids_to_enable = $request->get_param( 'enabled_payment_method_ids' );
-		$is_upe_enabled               = $request->get_param( 'is_upe_enabled' );
-
+	private function update_enabled_payment_methods( $payment_method_ids_to_enable, $is_upe_enabled ) {
 		if ( null === $is_upe_enabled ) {
 			return;
 		}

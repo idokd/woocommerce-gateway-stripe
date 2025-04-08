@@ -468,7 +468,7 @@ class WC_Stripe_UPE_Payment_Gateway extends WC_Gateway_Stripe {
 			}
 		}
 
-		$express_checkout_helper = new WC_Stripe_Express_Checkout_Helper();
+		$express_checkout_helper = new WC_Stripe_Express_Checkout_Helper( $this );
 
 		$stripe_params['isCheckout']                       = ( is_checkout() || has_block( 'woocommerce/checkout' ) ) && empty( $_GET['pay_for_order'] ); // wpcs: csrf ok.
 		$stripe_params['return_url']                       = $this->get_stripe_return_url();
@@ -488,8 +488,8 @@ class WC_Stripe_UPE_Payment_Gateway extends WC_Gateway_Stripe {
 		$stripe_params['cartContainsSubscription']         = $this->is_subscription_item_in_cart();
 		$stripe_params['accountCountry']                   = WC_Stripe::get_instance()->account->get_account_country();
 		$stripe_params['isPaymentRequestEnabled']          = $express_checkout_helper->is_payment_request_enabled();
-		$stripe_params['isAmazonPayEnabled']               = WC_Stripe_UPE_Payment_Method_Amazon_Pay::is_amazon_pay_enabled();
-		$stripe_params['isLinkEnabled']                    = WC_Stripe_UPE_Payment_Method_Link::is_link_enabled();
+		$stripe_params['isAmazonPayEnabled']               = $express_checkout_helper->is_amazon_pay_enabled();
+		$stripe_params['isLinkEnabled']                    = $express_checkout_helper->is_link_enabled();
 
 		// Add appearance settings.
 		$stripe_params['appearance']          = get_transient( $this->get_appearance_transient_key() );
@@ -670,7 +670,15 @@ class WC_Stripe_UPE_Payment_Gateway extends WC_Gateway_Stripe {
 	 * @param string[] $payment_method_ids_to_enable
 	 */
 	public function update_enabled_payment_methods( $payment_method_ids_to_enable ) {
-		WC_Stripe_Payment_Method_Configurations::update_payment_method_configuration( $payment_method_ids_to_enable, $this->get_stripe_supported_payment_methods() );
+		$payment_method_ids_to_update = array_merge(
+			$this->get_stripe_supported_payment_methods(),
+			[ WC_Stripe_Payment_Methods::APPLE_PAY, WC_Stripe_Payment_Methods::GOOGLE_PAY ]
+		);
+
+		WC_Stripe_Payment_Method_Configurations::update_payment_method_configuration(
+			$payment_method_ids_to_enable,
+			$payment_method_ids_to_update
+		);
 	}
 
 	/**
@@ -3133,5 +3141,23 @@ class WC_Stripe_UPE_Payment_Gateway extends WC_Gateway_Stripe {
 			unset( $actions['pay'], $actions['cancel'] );
 		}
 		return $actions;
+	}
+
+	/**
+	 * Checks if Google Pay and Apple Pay (ECE) are enabled.
+	 *
+	 * Overrides WC_Gateway_Stripe::is_payment_request_enabled().
+	 *
+	 * @return bool
+	 */
+	public function is_payment_request_enabled() {
+		$enabled_payment_method_ids = $this->get_upe_enabled_payment_method_ids();
+
+		// Apple Pay and Google Pay settings are currently unified in wp-admin.
+		// However, they are managed separately within the Stripe dashboard.
+		// Until we move to separate settings in wp-admin, both payment methods will be
+		// considered enabled if either is enabled in Stripe.
+		return in_array( WC_Stripe_Payment_Methods::APPLE_PAY, $enabled_payment_method_ids, true ) ||
+			in_array( WC_Stripe_Payment_Methods::GOOGLE_PAY, $enabled_payment_method_ids, true );
 	}
 }
