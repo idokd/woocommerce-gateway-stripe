@@ -166,5 +166,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Update - Use individual product tax status instead of storewide tax setup when determining express checkout availability.
 * Fix - Ensure the subscription object is not converted into a Stripe order object.
 * Update - Credit and Bank (BECS and ACSS) icons on the Block checkout page.
+* Fix - Fix express checkout for block cart and block checkout for WooCommerce 9.8.0+.
 
 [See changelog for all versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
