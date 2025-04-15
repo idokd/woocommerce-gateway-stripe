@@ -172,5 +172,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Fix BLIK visibility based on account and billing countries.
 * Add - Use Stripe Configuration API to manage payment methods enabled/disabled states.
 * Dev - Add track events when enabling/disabling payment methods.
+* Fix - Prepare mandate data from subscription object on change payment method page.
 
 [See changelog for all versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
