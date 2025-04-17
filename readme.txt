@@ -110,7 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.3.2 - 2025-04-10 =
-* Fix - Fix express checkout for block cart and block checkout for WooCommerce 9.8.0+.
+= 9.4.1 - xxxx-xx-xx =
+* Dev - Forces rollback of version 9.4.0.
 
 [See changelog for all versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
