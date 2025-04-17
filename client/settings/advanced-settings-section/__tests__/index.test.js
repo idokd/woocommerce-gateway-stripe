@@ -7,13 +7,13 @@ import {
 	useIsUpeEnabled,
 	useGetSavingError,
 	useSettings,
-	useIsSPEEnabled,
+	useIsSpeEnabled,
 } from 'wcstripe/data';
 
 jest.mock( 'wcstripe/data', () => ( {
 	useDebugLog: jest.fn(),
 	useIsUpeEnabled: jest.fn(),
-	useIsSPEEnabled: jest.fn(),
+	useIsSpeEnabled: jest.fn(),
 	useGetSavingError: jest.fn(),
 	useSettings: jest.fn(),
 } ) );
@@ -24,7 +24,7 @@ describe( 'AdvancedSettings', () => {
 
 		useDebugLog.mockReturnValue( [ true, jest.fn() ] );
 		useIsUpeEnabled.mockReturnValue( [ true, jest.fn() ] );
-		useIsSPEEnabled.mockReturnValue( [ false, jest.fn() ] );
+		useIsSpeEnabled.mockReturnValue( [ false, jest.fn() ] );
 		useGetSavingError.mockReturnValue( null );
 
 		// Set `isLoading` to false so `LoadableSettingsSection` can render.
@@ -62,7 +62,7 @@ describe( 'AdvancedSettings', () => {
 		render( <AdvancedSettings /> );
 
 		expect(
-			screen.queryByText( 'Enable Smart Checkout (Recommended)' )
+			screen.queryByText( 'Single payment element' )
 		).not.toBeInTheDocument();
 	} );
 
@@ -72,7 +72,7 @@ describe( 'AdvancedSettings', () => {
 		render( <AdvancedSettings /> );
 
 		expect(
-			screen.queryByText( 'Enable Smart Checkout (Recommended)' )
+			screen.queryByText( 'Single payment element' )
 		).toBeInTheDocument();
 	} );
 } );

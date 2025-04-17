@@ -52,13 +52,10 @@ const PaymentElements = ( {
 
 		async function createIntent() {
 			try {
-				const paymentNeeded = getBlocksConfiguration()?.isPaymentNeeded;
-				const response = paymentNeeded
-					? await api.createIntent(
-							getBlocksConfiguration()?.orderId,
-							paymentMethodId
-					  )
-					: await api.initSetupIntent( paymentMethodId );
+				const response = await api.createIntent(
+					getBlocksConfiguration()?.orderId,
+					paymentMethodId
+				);
 
 				setClientSecret( response.client_secret );
 				setPaymentIntentId( response.id );

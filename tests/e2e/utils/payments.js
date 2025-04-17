@@ -317,6 +317,7 @@ export async function setupBlocksCheckout( page, billingDetails = null ) {
 		address_1: 'Address',
 		address_2: 'Apartment, suite, etc. (optional)',
 		city: 'City',
+		postcode: 'ZIP Code',
 		phone: 'Phone (optional)',
 		email: 'Email address',
 	};
@@ -348,7 +349,7 @@ export async function setupBlocksCheckout( page, billingDetails = null ) {
 			.selectOption( { label: billingDetails[ 'country' ] } );
 
 		await page
-			.locator( '#shipping-state', { exact: true } )
+			.getByLabel( 'State', { exact: true } )
 			.selectOption( { label: billingDetails[ 'state' ] } );
 
 		// Expand the address 2 field.
@@ -360,10 +361,6 @@ export async function setupBlocksCheckout( page, billingDetails = null ) {
 				.click();
 		}
 
-		await page
-			.locator( '#shipping-postcode' )
-			.fill( billingDetails[ 'postcode' ] );
-
 		for ( const fieldName of Object.keys( billingDetails ) ) {
 			if (
 				[
@@ -372,7 +369,6 @@ export async function setupBlocksCheckout( page, billingDetails = null ) {
 					'state_iso',
 					'country_iso',
 					'company',
-					'postcode',
 				].includes( fieldName )
 			) {
 				continue;
@@ -472,97 +468,6 @@ export const fillACHBankDetails = async ( page ) => {
 
 	// Click "Done" button.
 	await frame.getByTestId( 'done-button' ).click();
-};
-
-/**
- * Set up the checkout page for ACSS payment.
- *
- * @param {Page} page Playwright page fixture.
- * @param {string} checkoutType The type of checkout ('blocks' or 'shortcode').
- */
-export const setupACSSCheckout = async ( page, checkoutType = 'blocks' ) => {
-	await emptyCart( page );
-	await setupCart( page );
-
-	if ( checkoutType === 'blocks' ) {
-		await setupBlocksCheckout(
-			page,
-			config.get( 'addresses.customer_canada.billing' )
-		);
-
-		await page.waitForTimeout( 1000 );
-
-		// Select ACSS in blocks checkout.
-		await page
-			.locator( 'label' )
-			.filter( { hasText: 'Pre-Authorized Debit' } )
-			.click();
-
-		await page.waitForTimeout( 1000 );
-
-		// Wait for the iframe to be ready.
-		await page.waitForSelector(
-			'#radio-control-wc-payment-method-options-stripe_acss_debit__content iframe[src*="elements-inner-payment"]'
-		);
-
-		await page.waitForTimeout( 1000 );
-	} else {
-		await setupShortcodeCheckout(
-			page,
-			config.get( 'addresses.customer_canada.billing' )
-		);
-
-		await page.waitForTimeout( 1000 );
-
-		// Select ACSS in shortcode checkout.
-		await page.getByText( 'Pre-Authorized Debit' ).click();
-
-		await page.waitForTimeout( 1000 );
-
-		// Wait for the iframe to be ready.
-		await page.waitForSelector(
-			'.wc_payment_method.payment_method_stripe_acss_debit iframe[src*="elements-inner-payment"]'
-		);
-		await page.waitForTimeout( 1000 );
-	}
-};
-
-/**
- * Interact with the Stripe Elements iframe to fill in the ACSS details.
- *
- * @param {Page} page Playwright page fixture.
- */
-export const fillACSSDetails = async ( page ) => {
-	const outerFrameElement = await page
-		.locator( 'iframe[name^="__privateStripeFrame"]' )
-		.first();
-
-	// Wait for the outer iframe to be present.
-	await expect( outerFrameElement ).toBeVisible( { timeout: 5000 } );
-
-	const outerFrame = await outerFrameElement.contentFrame();
-	const innerFrameElement = await outerFrame
-		.locator( 'iframe[title="Link an ACSS Debit account"]' )
-		.first();
-
-	// Wait for the inner iframe to be present.
-	await expect( innerFrameElement ).toBeVisible( { timeout: 5000 } );
-
-	const innerFrame = await innerFrameElement.contentFrame();
-
-	// Wait for Agree button to be visible.
-	await expect(
-		innerFrame.getByRole( 'button', { name: 'Agree' } )
-	).toBeVisible();
-
-	await page.waitForTimeout( 1000 );
-
-	// Agree, simulate successful payment, and agree again.
-	await innerFrame.getByRole( 'button', { name: 'Agree' } ).click();
-
-	await innerFrame.getByText( 'Simulate successful' ).click();
-
-	await innerFrame.getByRole( 'button', { name: 'Agree' } ).click();
 };
 
 /**

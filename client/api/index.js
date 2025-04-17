@@ -110,13 +110,10 @@ export default class WCStripeAPI {
 	/**
 	 * Creates a setup intent without confirming it.
 	 *
-	 * @param {string} paymentMethodType The type of payment method.
-	 *
 	 * @return {Promise} The final promise for the request to the server.
 	 */
-	initSetupIntent( paymentMethodType ) {
+	initSetupIntent() {
 		return this.request( this.getAjaxUrl( 'init_setup_intent' ), {
-			payment_method_type: paymentMethodType,
 			_ajax_nonce: this.options?.createSetupIntentNonce,
 		} )
 			.then( ( response ) => {

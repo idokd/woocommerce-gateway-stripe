@@ -179,32 +179,22 @@ const getKlarnaCurrencies = () => {
 	const eeaCountries = [
 		'AT', // Austria
 		'BE', // Belgium
-		'HR', // Croatia
-		'CY', // Cyprus
-		'CZ', // Czech Republic
+		'CH', // Switzerland
+		'CZ', // Czechia
+		'DE', // Germany
 		'DK', // Denmark
-		'EE', // Estonia
+		'ES', // Spain
 		'FI', // Finland
 		'FR', // France
-		'DE', // Germany
+		'GB', // United Kingdom
 		'GR', // Greece
 		'IE', // Ireland
 		'IT', // Italy
-		'LV', // Latvia
-		'LT', // Lithuania
-		'LU', // Luxembourg
-		'MT', // Malta
 		'NL', // Netherlands
 		'NO', // Norway
 		'PL', // Poland
 		'PT', // Portugal
-		'RO', // Romania
-		'SK', // Slovakia
-		'SI', // Slovenia
-		'ES', // Spain
 		'SE', // Sweden
-		'CH', // Switzerland
-		'GB', // United Kingdom
 	];
 
 	// Countries located in the EEA, Switzerland and the UK can also transact in any EU based currencies including NOK, PLN, DKK etc.

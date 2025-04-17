@@ -9,20 +9,12 @@ use Automattic\WooCommerce\Blocks\RestApi;
 /**
  * WC_REST_Stripe_Settings_Controller_Test unit tests.
  */
-class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Test_Case {
+class WC_REST_Stripe_Settings_Controller_Test extends WP_UnitTestCase {
 
 	/**
 	 * Tested REST route.
 	 */
 	const SETTINGS_ROUTE = '/wc/v3/wc_stripe/settings';
-
-	/**
-	 * Controller instance
-	 *
-	 * @var WC_REST_Stripe_Settings_Controller
-	 */
-	private $controller;
-
 
 	/**
 	 * Gateway instance that the controller uses.
@@ -51,9 +43,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 		// Enable ACH
 		update_option( WC_Stripe_Feature_Flags::LPM_ACH_FEATURE_FLAG_NAME, 'yes' );
 
-		// Enable Amazon Pay
-		update_option( WC_Stripe_Feature_Flags::AMAZON_PAY_FEATURE_FLAG_NAME, 'yes' );
-
 		// All tests assume UPE is enabled.
 		update_option( '_wcstripe_feature_upe', 'yes' );
 		$upe_helper->enable_upe();
@@ -74,9 +63,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 			$this->markTestSkipped( 'The controller is not compatible with older WC versions, due to the missing `update_option` method on the gateway.' );
 		}
 
-		$this->upe_helper = new UPE_Test_Helper();
-		$this->controller = new WC_REST_Stripe_Settings_Controller( $this->get_gateway() );
-
 		add_action( 'rest_api_init', [ $this, 'deregister_wc_blocks_rest_api' ], 5 );
 
 		// Set the user so that we can pass the authentication.
@@ -88,45 +74,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 
 		delete_option( WC_Stripe_Feature_Flags::LPM_BACS_FEATURE_FLAG_NAME );
 		delete_option( WC_Stripe_Feature_Flags::LPM_ACH_FEATURE_FLAG_NAME );
-		delete_option( WC_Stripe_Feature_Flags::AMAZON_PAY_FEATURE_FLAG_NAME );
-	}
-
-	/**
-	 * @dataProvider stripe_payment_method_configurations_provider
-	 */
-	public function test_get_stripe_payment_method_configurations_settings( $enabled_payment_method_ids, $disabled_payment_method_ids ) {
-		$this->mock_payment_method_configurations( $enabled_payment_method_ids, $disabled_payment_method_ids );
-
-		$response = $this->controller->get_settings();
-		$this->assertEquals( 200, $response->get_status() );
-		foreach ( $enabled_payment_method_ids as $payment_method ) {
-			$this->assertContains( $payment_method, $response->get_data()['enabled_payment_method_ids'] );
-		}
-		foreach ( $disabled_payment_method_ids as $payment_method ) {
-			$this->assertNotContains( $payment_method, $response->get_data()['enabled_payment_method_ids'] );
-		}
-	}
-
-	/**
-	 * Test that the update_settings method updates the payment method configurations settings.
-	 */
-	public function test_update_stripe_payment_method_configurations_settings() {
-		// Set up initial state with only card enabled
-		$this->mock_payment_method_configurations( [ 'card' ], [] );
-
-		// Set pmc_enabled to yes to prevent migration
-		$stripe_settings = WC_Stripe_Helper::get_stripe_settings();
-		$stripe_settings['pmc_enabled'] = 'yes';
-		WC_Stripe_Helper::update_main_stripe_settings( $stripe_settings );
-
-		$this->expect_payment_method_configurations_update( [ 'amazon_pay', 'card' ] );
-
-		$request = new WP_REST_Request( 'POST', self::SETTINGS_ROUTE );
-		$request->set_param( 'enabled_payment_method_ids', [ 'amazon_pay', 'card' ] );
-		$request->set_param( 'is_upe_enabled', true );
-
-		$response = $this->controller->update_settings( $request );
-		$this->assertEquals( 200, $response->get_status() );
 	}
 
 	/**
@@ -291,7 +238,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 			WC_Stripe_Payment_Methods::CARD,
 			WC_Stripe_Payment_Methods::ACH,
 			WC_Stripe_Payment_Methods::ALIPAY,
-			WC_Stripe_Payment_Methods::AMAZON_PAY,
 			WC_Stripe_Payment_Methods::KLARNA,
 			WC_Stripe_Payment_Methods::AFFIRM,
 			WC_Stripe_Payment_Methods::AFTERPAY_CLEARPAY,
@@ -306,7 +252,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 			// 'link', // Link is excluded as it is a express method.
 			WC_Stripe_Payment_Methods::WECHAT_PAY,
 			WC_Stripe_Payment_Methods::CASHAPP_PAY,
-			WC_Stripe_Payment_Methods::ACSS_DEBIT,
 		];
 		$available_method_ids = $response->get_data()['available_payment_method_ids'];
 
@@ -337,7 +282,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 
 		WC_Stripe::get_instance()->account->method( 'get_account_country' )->willReturn( 'US' );
 
-		// Link and Amazon Pay are excluded as they are express methods only.
 		$expected_method_ids = [
 			WC_Stripe_Payment_Methods::CARD,
 			WC_Stripe_Payment_Methods::ACH,
@@ -353,9 +297,9 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 			WC_Stripe_Payment_Methods::SEPA_DEBIT,
 			WC_Stripe_Payment_Methods::P24,
 			WC_Stripe_Payment_Methods::MULTIBANCO,
+			// 'link', // Link is excluded as it is a express method.
 			WC_Stripe_Payment_Methods::WECHAT_PAY,
 			WC_Stripe_Payment_Methods::CASHAPP_PAY,
-			WC_Stripe_Payment_Methods::ACSS_DEBIT,
 		];
 
 		$response           = $this->rest_get_settings();
@@ -371,15 +315,13 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 	public function test_get_settings_fails_if_user_cannot_manage_woocommerce() {
 		$cb = $this->create_can_manage_woocommerce_cap_override( false );
 		add_filter( 'user_has_cap', $cb );
-		$request  = new WP_REST_Request( 'GET', self::SETTINGS_ROUTE );
-		$response = rest_do_request( $request );
+		$response = $this->rest_get_settings();
 		$this->assertEquals( 403, $response->get_status() );
 		remove_filter( 'user_has_cap', $cb );
 
 		$cb = $this->create_can_manage_woocommerce_cap_override( true );
 		add_filter( 'user_has_cap', $cb );
-		$request  = new WP_REST_Request( 'GET', self::SETTINGS_ROUTE );
-		$response = rest_do_request( $request );
+		$response = $this->rest_get_settings();
 		$this->assertEquals( 200, $response->get_status() );
 		remove_filter( 'user_has_cap', $cb );
 	}
@@ -409,53 +351,12 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 		$this->assertEquals( 'no', $notice_option );
 	}
 
-	/**
-	 * @dataProvider is_payment_request_enabled_provider
-	 */
-	public function test_is_payment_request_enabled( $is_enabled, $enabled_payment_method_ids, $disabled_payment_method_ids ) {
-		$this->mock_payment_method_configurations(
-			$enabled_payment_method_ids,
-			$disabled_payment_method_ids
-		);
-		$request  = new WP_REST_Request( 'GET', self::SETTINGS_ROUTE );
-		$response = $this->controller->get_settings( $request );
-		$this->assertEquals( 200, $response->get_status() );
-		$this->assertEquals( $is_enabled, $response->get_data()['is_payment_request_enabled'] );
-	}
-
-	public function is_payment_request_enabled_provider() {
-		return [
-			[ true, [ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::GOOGLE_PAY ], [] ],
-			[ false, [], [ WC_Stripe_Payment_Methods::GOOGLE_PAY, WC_Stripe_Payment_Methods::APPLE_PAY, WC_Stripe_Payment_Methods::LINK, WC_Stripe_Payment_Methods::AMAZON_PAY ] ],
-		];
-	}
-
-	/**
-	 * @dataProvider is_payment_request_enabled_legacy_provider
-	 */
-	public function test_is_payment_request_enabled_legacy( $is_enabled, $option_value ) {
-		// Settings controller with non-UPE gateway.
-		$gateway = new WC_Gateway_Stripe();
-		$gateway->update_option( 'payment_request', $option_value );
-		$controller = new WC_REST_Stripe_Settings_Controller( $gateway );
-
-		$request  = new WP_REST_Request( 'GET', self::SETTINGS_ROUTE );
-		$response = $controller->get_settings( $request );
-		$this->assertEquals( 200, $response->get_status() );
-		$this->assertEquals( $is_enabled, $response->get_data()['is_payment_request_enabled'] );
-	}
-
-	public function is_payment_request_enabled_legacy_provider() {
-		return [
-			[ true, 'yes' ],
-			[ false, 'no' ],
-		];
-	}
-
 	public function boolean_field_provider() {
 		return [
 			'is_stripe_enabled'                     => [ 'is_stripe_enabled', 'enabled' ],
 			'is_test_mode_enabled'                  => [ 'is_test_mode_enabled', 'testmode' ],
+			'is_payment_request_enabled'            => [ 'is_payment_request_enabled', 'payment_request' ],
+			'is_amazon_pay_enabled'                 => [ 'is_amazon_pay_enabled', 'amazon_pay' ],
 			'is_spe_enabled'                        => [ 'is_spe_enabled', 'single_payment_element' ],
 			'is_manual_capture_enabled'             => [ 'is_manual_capture_enabled', 'capture', true ],
 			'is_saved_cards_enabled'                => [ 'is_saved_cards_enabled', 'saved_cards' ],
@@ -468,17 +369,16 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 		];
 	}
 
-	public function stripe_payment_method_configurations_provider() {
-		return [
-			'amazon_pay' => [ [ 'amazon_pay' ], [] ],
-			'amazon_pay' => [ [], [ 'amazon_pay' ] ],
-			'card'       => [ [ 'card', 'link' ], [] ],
-			'card'       => [ [], [ 'card', 'link' ] ],
-		];
-	}
-
 	public function enum_field_provider() {
 		return [
+			'enabled_payment_method_ids'       => [
+				'enabled_payment_method_ids',
+				'upe_checkout_experience_accepted_payments',
+				[ WC_Stripe_Payment_Methods::CARD ],
+				[ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::ALIPAY ],
+				[ 'foo' ],
+				true,
+			],
 			'payment_request_button_theme'     => [
 				'payment_request_button_theme',
 				'payment_request_button_theme',
@@ -548,7 +448,7 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 	private function rest_get_settings() {
 		$request = new WP_REST_Request( 'GET', self::SETTINGS_ROUTE );
 
-		return $this->controller->get_settings( $request );
+		return rest_do_request( $request );
 	}
 
 	/**

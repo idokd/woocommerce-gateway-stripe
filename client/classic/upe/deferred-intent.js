@@ -53,14 +53,9 @@ jQuery( function ( $ ) {
 		$( 'form#order_review' ).length
 	) {
 		maybeMountStripePaymentElement();
-
-		// For payment methods that don't support deferred intents, we mount the Payment Element only when the PM is selected.
-		$( 'input[name="payment_method"]' ).on( 'change', () => {
-			maybeMountStripePaymentElement();
-		} );
 	}
 
-	// For payment methods that don't support deferred intents, we mount the Payment Element only when the PM is selected.
+	// For payment methods that don't support deferred intents, we mount the Payment Element only when it's selected.
 	$( 'form.checkout' ).on( 'change', 'input[name="payment_method"]', () => {
 		maybeMountStripePaymentElement();
 	} );
