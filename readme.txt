@@ -168,7 +168,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Feature - Work to support Optimized Checkout
 * Feature - Work to support Amazon Pay
 * Dev - Splits the code coverage GitHub Actions Workflow into two separate actions
-* Dev - Implement a new Stripe Order class across the codebase
 * Dev - Updates the Code Sniffer package to version 1.0.0.
 * Dev - Minor fix to e2e setup code
 * Dev - Make PHP error log from Docker container available in docker/logs/php/error.log
