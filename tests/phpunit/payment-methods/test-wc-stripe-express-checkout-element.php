@@ -27,8 +27,13 @@ class WC_Stripe_Express_Checkout_Element_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$helper = $this->getMockBuilder( WC_Stripe_Express_Checkout_Helper::class )
+		$gateway = $this->getMockBuilder( WC_Gateway_Stripe::class )
 			->disableOriginalConstructor()
+			->getMock();
+
+		$helper = $this->getMockBuilder( WC_Stripe_Express_Checkout_Helper::class )
+			->setConstructorArgs( [ $gateway ] )
+			->setMethods( [ 'is_page_supported', 'should_show_express_checkout_button' ] )
 			->getMock();
 
 		$this->element = new WC_Stripe_Express_Checkout_Element( $ajax_handler, $helper );
@@ -60,8 +65,12 @@ class WC_Stripe_Express_Checkout_Element_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$helper = $this->getMockBuilder( WC_Stripe_Express_Checkout_Helper::class )
+		$gateway = $this->getMockBuilder( WC_Gateway_Stripe::class )
 			->disableOriginalConstructor()
+			->getMock();
+
+		$helper = $this->getMockBuilder( WC_Stripe_Express_Checkout_Helper::class )
+			->setConstructorArgs( [ $gateway ] )
 			->getMock();
 
 		$element = new WC_Stripe_Express_Checkout_Element( $ajax_handler, $helper );
@@ -87,8 +96,12 @@ class WC_Stripe_Express_Checkout_Element_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$helper = $this->getMockBuilder( WC_Stripe_Express_Checkout_Helper::class )
+		$gateway = $this->getMockBuilder( WC_Gateway_Stripe::class )
 			->disableOriginalConstructor()
+			->getMock();
+
+		$helper = $this->getMockBuilder( WC_Stripe_Express_Checkout_Helper::class )
+			->setConstructorArgs( [ $gateway ] )
 			->setMethods( [ 'is_page_supported', 'should_show_express_checkout_button' ] )
 			->getMock();
 
@@ -141,13 +154,13 @@ class WC_Stripe_Express_Checkout_Element_Test extends WP_UnitTestCase {
 	 * @dataProvider provide_test_add_order_meta
 	 */
 	public function test_add_order_meta( $checkout_type, $expected ) {
-		$order = wc_create_order();
+		$order = WC_Stripe_Order::create();
 
 		$_POST['express_checkout_type'] = $checkout_type;
 		$_POST['payment_method']        = 'stripe';
 
 		$this->element->add_order_meta( $order->get_id(), [] );
-		$order = wc_get_order( $order->get_id() );
+		$order = WC_Stripe_Order::get_by_id( $order->get_id() );
 
 		$this->assertSame( $expected, $order->get_payment_method_title() );
 	}
@@ -198,9 +211,9 @@ class WC_Stripe_Express_Checkout_Element_Test extends WP_UnitTestCase {
 				'title'    => 'test',
 				'expected' => 'test',
 			],
-			'Amazon Pay'   => [
-				'title'    => 'Amazon Pay (Stripe)',
-				'expected' => 'Amazon Pay (Stripe)',
+			'Google Pay'   => [
+				'title'    => 'Google Pay (Stripe)',
+				'expected' => 'Google Pay (Stripe)',
 			],
 		];
 	}
