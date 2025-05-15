@@ -1,6 +1,7 @@
 *** Changelog ***
 
 = 9.5.1 - xxxx-xx-xx =
+* Fix - Stop checking for detached subscriptions for admin users, as it was slowing down wp-admin
 * Fix - Fix fatal error when checking for a payment method availability using a specific order ID.
 
 = 9.5.0 - 2025-05-13 =
