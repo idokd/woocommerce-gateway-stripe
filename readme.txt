@@ -4,7 +4,7 @@ Tags: credit card, stripe, payments, woocommerce, automattic
 Requires at least: 6.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 9.5.0
+Stable tag: 9.5.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Attributions: thorsten-stripe
@@ -110,7 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.5.1 - xxxx-xx-xx =
+= 9.5.1 - 2025-05-17 =
 * Fix - Add a fetch cooldown to the payment method configuration retrieval endpoint to prevent excessive requests.
 * Fix - Prevent further Stripe API calls if API keys are invalid (401 response).
 * Fix - Stop checking for detached subscriptions for admin users, as it was slowing down wp-admin.
