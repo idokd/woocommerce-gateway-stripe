@@ -112,5 +112,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 9.5.2 - xxxx-xx-xx =
 * Add - Implement custom database cache for persistent caching with in-memory optimization.
+* Fix - Disable payment settings sync when we receive unsupported payment method configurations.
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
