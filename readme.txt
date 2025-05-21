@@ -110,10 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.5.1 - 2025-05-17 =
-* Fix - Add a fetch cooldown to the payment method configuration retrieval endpoint to prevent excessive requests.
-* Fix - Prevent further Stripe API calls if API keys are invalid (401 response).
-* Fix - Stop checking for detached subscriptions for admin users, as it was slowing down wp-admin.
-* Fix - Fix fatal error when checking for a payment method availability using a specific order ID.
+= 9.5.2 - xxxx-xx-xx =
+* Add - Implement custom database cache for persistent caching with in-memory optimization.
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
