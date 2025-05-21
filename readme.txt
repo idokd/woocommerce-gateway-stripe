@@ -112,6 +112,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 9.5.2 - xxxx-xx-xx =
 * Add - Implement custom database cache for persistent caching with in-memory optimization.
+* Update - Remove feature that flags 401s and proactively blocks subsequent API calls until the store has reauthenticated.
 * Fix - Disable payment settings sync when we receive unsupported payment method configurations.
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).

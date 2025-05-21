@@ -2,6 +2,7 @@
 
 = 9.5.2 - xxxx-xx-xx =
 * Add - Implement custom database cache for persistent caching with in-memory optimization.
+* Update - Remove feature that flags 401s and proactively blocks subsequent API calls until the store has reauthenticated.
 * Fix - Disable payment settings sync when we receive unsupported payment method configurations.
 
 = 9.5.1 - 2025-05-17 =
