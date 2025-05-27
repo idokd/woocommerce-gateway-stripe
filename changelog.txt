@@ -3,6 +3,7 @@
 = 9.5.3 - xxxx-xx-xx =
 * Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats
 * Tweak - Track charge completed via webhooks in order notes
+* Fix - Ensure that we migrate payment_request_button_size=medium on upgrade
 
 = 9.5.2 - 2025-05-22 =
 * Add - Implement custom database cache for persistent caching with in-memory optimization.

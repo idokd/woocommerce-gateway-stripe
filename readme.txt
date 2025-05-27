@@ -114,5 +114,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 * Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats
 * Tweak - Track charge completed via webhooks in order notes
+* Fix - Ensure that we migrate payment_request_button_size=medium on upgrade
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
