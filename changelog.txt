@@ -1,5 +1,8 @@
 *** Changelog ***
 
+= 9.5.3 - xxxx-xx-xx =
+* Tweak - Track charge completed via webhooks in order notes
+
 = 9.5.2 - 2025-05-22 =
 * Add - Implement custom database cache for persistent caching with in-memory optimization.
 * Update - Remove feature that flags 401s and proactively blocks subsequent API calls until the store has reauthenticated.
