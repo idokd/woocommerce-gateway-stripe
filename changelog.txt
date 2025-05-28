@@ -1,6 +1,7 @@
 *** Changelog ***
 
 = 9.5.3 - xxxx-xx-xx =
+* Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats
 * Tweak - Track charge completed via webhooks in order notes
 
 = 9.5.2 - 2025-05-22 =

@@ -112,6 +112,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 9.5.3 - xxxx-xx-xx =
 
+* Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats
 * Tweak - Track charge completed via webhooks in order notes
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
