@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * This class extends the WCS_Background_Repairer for scheduling and running the individual migration actions.
  */
-class WC_Stripe_Subscriptions_Repairer_Legacy_SEPA_Tokens extends WCS_Background_Repairer {
+class WC_Stripe_Subscriptions_Repairer_Legacy_SEPA_Tokens extends \WCS_Background_Repairer {
 
 	const LEGACY_SEPA_SUBSCRIPTIONS_COUNT = 'woocommerce_stripe_subscriptions_with_legacy_sepa';
 
@@ -27,6 +27,20 @@ class WC_Stripe_Subscriptions_Repairer_Legacy_SEPA_Tokens extends WCS_Background
 	 * @var string
 	 */
 	private $display_notice_transient = 'wc_stripe_legacy_sepa_tokens_repair_notice';
+
+	/**
+	 * The scheduled hook.
+	 *
+	 * @var string
+	 */
+	protected $scheduled_hook;
+
+	/**
+	 * The repair hook.
+	 *
+	 * @var string
+	 */
+	protected $repair_hook;
 
 	/**
 	 * Constructor

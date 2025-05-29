@@ -33,7 +33,7 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 	 *
 	 * @return string[]
 	 */
-	public function get_upe_enabled_payment_method_ids() {
+	public function get_upe_enabled_payment_method_ids( $force_refresh = false ) {
 		return [ WC_Stripe_Payment_Methods::CARD ];
 	}
 
@@ -101,10 +101,11 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 	 */
 	public function admin_options() {
 		$form_fields = $this->get_form_fields();
+		$return_url  = admin_url( 'admin.php?page=wc-settings&tab=checkout' );
+		$header      = $this->get_method_title();
+		$return_text = __( 'Return to payments', 'woocommerce-gateway-stripe' );
 
-		echo '<h2>' . esc_html( $this->get_method_title() );
-		wc_back_link( __( 'Return to payments', 'woocommerce-gateway-stripe' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
-		echo '</h2>';
+		WC_Stripe_Helper::render_admin_header( $header, $return_text, $return_url );
 
 		$this->render_upe_settings();
 	}
@@ -344,11 +345,12 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 	 * @return array
 	 */
 	public function payment_icons() {
-		$icon_list = [
+		$icon_list  = [
 			WC_Stripe_Payment_Methods::ACH         => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/bank-debit.svg" class="stripe-ach-icon stripe-icon" alt="ACH" />',
 			WC_Stripe_Payment_Methods::ACSS_DEBIT  => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/bank-debit.svg" class="stripe-ach-icon stripe-icon" alt="' . __( 'Pre-Authorized Debit', 'woocommerce-gateway-stripe' ) . '" />',
-			WC_Stripe_Payment_Methods::BECS_DEBIT  => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/bank-debit.svg" class="stripe-ach-icon stripe-icon" alt="' . __( 'BECS Direct Debit', 'woocommerce-gateway-stripe' ) . '" />',
 			WC_Stripe_Payment_Methods::ALIPAY      => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/alipay.svg" class="stripe-alipay-icon stripe-icon" alt="Alipay" />',
+			WC_Stripe_Payment_Methods::BECS_DEBIT  => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/bank-debit.svg" class="stripe-ach-icon stripe-icon" alt="' . __( 'BECS Direct Debit', 'woocommerce-gateway-stripe' ) . '" />',
+			WC_Stripe_Payment_Methods::BLIK        => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/blik.svg" class="stripe-blik-icon stripe-icon" alt="BLIK" />',
 			WC_Stripe_Payment_Methods::WECHAT_PAY  => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/wechat.svg" class="stripe-wechat-icon stripe-icon" alt="Wechat Pay" />',
 			WC_Stripe_Payment_Methods::BANCONTACT  => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/bancontact.svg" class="stripe-bancontact-icon stripe-icon" alt="Bancontact" />',
 			WC_Stripe_Payment_Methods::IDEAL       => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/ideal.svg" class="stripe-ideal-icon stripe-icon" alt="iDEAL" />',
@@ -365,9 +367,10 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 			'cards'                                => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/cards.svg" class="stripe-cards-icon stripe-icon" alt="' . __( 'Credit / Debit Card', 'woocommerce-gateway-stripe' ) . '" />',
 			WC_Stripe_Payment_Methods::CASHAPP_PAY => '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/cashapp.svg" class="stripe-cashapp-icon stripe-icon" alt="Cash App Pay" />',
 		];
-		$settings  = WC_Stripe_Helper::get_stripe_settings();
-		if ( 'yes' === $settings['single_payment_element'] ) {
-			$icon_list['cards'] = '<img src="' . WC_STRIPE_PLUGIN_URL . '/assets/images/stripe.svg" class="stripe-cards-icon stripe-icon" alt="' . __( 'Stripe', 'woocommerce-gateway-stripe' ) . '" />';
+		$settings   = WC_Stripe_Helper::get_stripe_settings();
+		$oc_setting = $settings['optimized_checkout_element'] ?? null;
+		if ( 'yes' === $oc_setting ) {
+			$icon_list['cards'] = '';
 		}
 		return apply_filters( 'wc_stripe_payment_icons', $icon_list );
 	}
@@ -557,8 +560,13 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 			$this->update_fees( $order, is_string( $response->balance_transaction ) ? $response->balance_transaction : $response->balance_transaction->id );
 		}
 
+		// TODO: Refactor and add mandate ID support for other payment methods, if necessary.
+		// The mandate ID is not available for the intent object, so we need to fetch the charge.
+		// Mandate ID is necessary for renewal payments for certain payment methods and Indian cards.
 		if ( isset( $response->payment_method_details->card->mandate ) ) {
 			$order->update_meta_data( '_stripe_mandate_id', $response->payment_method_details->card->mandate );
+		} elseif ( isset( $response->payment_method_details->acss_debit->mandate ) ) {
+			$order->update_meta_data( '_stripe_mandate_id', $response->payment_method_details->acss_debit->mandate );
 		}
 
 		if ( isset( $response->payment_method, $response->payment_method_details ) ) {
@@ -603,6 +611,9 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 
 					/* translators: transaction id */
 					$message = sprintf( __( 'Stripe charge complete (Charge ID: %s)', 'woocommerce-gateway-stripe' ), $response->id );
+					if ( isset( $response->is_webhook_response ) ) {
+						$message .= ' (via webhook)';
+					}
 					$order->add_order_note( $message );
 				}
 			}
@@ -1137,8 +1148,8 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 			];
 		}
 
-		// Refund without an amount is a no-op, but required to succeed
-		if ( '0.00' === sprintf( '%0.2f', $amount ?? 0 ) ) {
+		// Only treat zero-amount as a no-op for captured charges (real refunds), not for voiding pre-auths.
+		if ( 'yes' === $captured && '0.00' === sprintf( '%0.2f', $amount ?? 0 ) ) {
 			return true;
 		}
 
@@ -1630,14 +1641,23 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 		if ( 'payment_intent' === $intent->object ) {
 			WC_Stripe_Helper::add_payment_intent_to_order( $intent->id, $order );
 
-			// Add the mandate id necessary for renewal payments with Indian cards if it's present.
+			// TODO: Refactor and add mandate ID support for other payment methods, if necessary.
+			// The mandate ID is not available for the intent object, so we need to fetch the charge.
+			// Mandate ID is necessary for renewal payments for certain payment methods and Indian cards.
 			$charge = $this->get_latest_charge_from_intent( $intent );
 
 			if ( isset( $charge->payment_method_details->card->mandate ) ) {
 				$order->update_meta_data( '_stripe_mandate_id', $charge->payment_method_details->card->mandate );
+			} elseif ( isset( $charge->payment_method_details->acss_debit->mandate ) ) {
+				$order->update_meta_data( '_stripe_mandate_id', $charge->payment_method_details->acss_debit->mandate );
 			}
 		} elseif ( 'setup_intent' === $intent->object ) {
 			$order->update_meta_data( '_stripe_setup_intent', $intent->id );
+
+			// Add mandate for free trial subscriptions.
+			if ( isset( $intent->mandate ) ) {
+				$order->update_meta_data( '_stripe_mandate_id', $intent->mandate );
+			}
 		}
 
 		if ( is_callable( [ $order, 'save' ] ) ) {
@@ -1866,6 +1886,12 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 			$request = WC_Stripe_Helper::add_payment_method_to_request_array( $full_request['source'], $request );
 		}
 
+		// Add mandate if it exists.
+		$mandate = $order->get_meta( '_stripe_mandate_id', true );
+		if ( ! empty( $mandate ) ) {
+			$request['mandate'] = $mandate;
+		}
+
 		/**
 		 * Filter the value of the request.
 		 *
@@ -2027,14 +2053,13 @@ abstract class WC_Stripe_Payment_Gateway extends WC_Payment_Gateway_CC {
 	 * @version 4.0.0
 	 */
 	public function payment_scripts() {
-		if (
-			! is_product()
-			&& ! WC_Stripe_Helper::has_cart_or_checkout_on_current_page()
-			&& ! $this->is_valid_pay_for_order_endpoint()
-			&& ! is_add_payment_method_page()
-			&& ! isset( $_GET['change_payment_method'] ) // wpcs: csrf ok.
-			&& ! ( ! empty( get_query_var( 'view-subscription' ) ) && is_callable( 'WCS_Early_Renewal_Manager::is_early_renewal_via_modal_enabled' ) && WCS_Early_Renewal_Manager::is_early_renewal_via_modal_enabled() ) // @phpstan-ignore-line (Class WCS_Early_Renewal_Manager is checked already)
-			|| ( is_order_received_page() )
+		if ( ( ! is_product()
+				&& ! WC_Stripe_Helper::has_cart_or_checkout_on_current_page()
+				&& ! $this->is_valid_pay_for_order_endpoint()
+				&& ! is_add_payment_method_page()
+				&& ! isset( $_GET['change_payment_method'] ) // phpcs:ignore WordPress.Security.NonceVerification
+				&& ! ( ! empty( get_query_var( 'view-subscription' ) ) && is_callable( 'WCS_Early_Renewal_Manager::is_early_renewal_via_modal_enabled' ) && WCS_Early_Renewal_Manager::is_early_renewal_via_modal_enabled() ) // @phpstan-ignore-line (Class WCS_Early_Renewal_Manager is checked already)
+			) || ( is_order_received_page() )
 		) {
 			return;
 		}

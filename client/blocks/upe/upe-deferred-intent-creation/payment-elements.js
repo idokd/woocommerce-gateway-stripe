@@ -52,10 +52,13 @@ const PaymentElements = ( {
 
 		async function createIntent() {
 			try {
-				const response = await api.createIntent(
-					getBlocksConfiguration()?.orderId,
-					paymentMethodId
-				);
+				const paymentNeeded = getBlocksConfiguration()?.isPaymentNeeded;
+				const response = paymentNeeded
+					? await api.createIntent(
+							getBlocksConfiguration()?.orderId,
+							paymentMethodId
+					  )
+					: await api.initSetupIntent( paymentMethodId );
 
 				setClientSecret( response.client_secret );
 				setPaymentIntentId( response.id );
@@ -132,22 +135,12 @@ const PaymentElements = ( {
 			},
 		};
 
-		if ( getBlocksConfiguration()?.isSPEEnabled ) {
-			options.appearance.rules = {
-				...options.appearance?.rules,
-				...{
-					'.RadioIcon': {
-						width: '2.1em',
-					},
-					'.RadioIconOuter': {
-						strokeWidth: '2px',
-					},
-				},
-			};
+		if ( getBlocksConfiguration()?.isOCEnabled ) {
 			options = {
 				...options,
 				...{
-					paymentMethodConfiguration: 'pmc_...',
+					paymentMethodConfiguration: getBlocksConfiguration()
+						?.paymentMethodConfigurationParentId,
 				},
 			};
 		} else {
@@ -159,19 +152,19 @@ const PaymentElements = ( {
 					),
 				},
 			};
-		}
 
-		// If the cart contains a subscription or the payment method supports saving, we need to use off_session setup so Stripe can display appropriate terms and conditions.
-		if (
-			getBlocksConfiguration()?.cartContainsSubscription ||
-			props.showSaveOption
-		) {
-			options = {
-				...options,
-				...{
-					setupFutureUsage: 'off_session',
-				},
-			};
+			// If the cart contains a subscription or the payment method supports saving, we need to use off_session setup so Stripe can display appropriate terms and conditions.
+			if (
+				getBlocksConfiguration()?.cartContainsSubscription ||
+				props.showSaveOption
+			) {
+				options = {
+					...options,
+					...{
+						setupFutureUsage: 'off_session',
+					},
+				};
+			}
 		}
 	} else {
 		options = {

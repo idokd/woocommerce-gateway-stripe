@@ -188,14 +188,15 @@ class WC_Stripe_Express_Checkout_Element {
 				'publishable_key'             => WC_Stripe_Mode::is_test() ? $this->stripe_settings['test_publishable_key'] : $this->stripe_settings['publishable_key'],
 				'allow_prepaid_card'          => apply_filters( 'wc_stripe_allow_prepaid_card', true ) ? 'yes' : 'no',
 				'locale'                      => WC_Stripe_Helper::convert_wc_locale_to_stripe_locale( get_locale() ),
-				'is_link_enabled'             => WC_Stripe_UPE_Payment_Method_Link::is_link_enabled(),
+				'is_link_enabled'             => $this->express_checkout_helper->is_link_enabled(),
 				'is_express_checkout_enabled' => $this->express_checkout_helper->is_express_checkout_enabled(),
-				'is_amazon_pay_enabled'       => WC_Stripe_UPE_Payment_Method_Amazon_Pay::is_amazon_pay_enabled(),
+				'is_amazon_pay_enabled'       => $this->express_checkout_helper->is_amazon_pay_enabled(),
 				'is_payment_request_enabled'  => $this->express_checkout_helper->is_payment_request_enabled(),
 			],
 			'nonce'                  => [
 				'payment'                   => wp_create_nonce( 'wc-stripe-express-checkout' ),
 				'shipping'                  => wp_create_nonce( 'wc-stripe-express-checkout-shipping' ),
+				'normalize_address'         => wp_create_nonce( 'wc-stripe-express-checkout-normalize-address' ),
 				'get_cart_details'          => wp_create_nonce( 'wc-stripe-get-cart-details' ),
 				'update_shipping'           => wp_create_nonce( 'wc-stripe-update-shipping-method' ),
 				'checkout'                  => wp_create_nonce( 'woocommerce-process_checkout' ),
@@ -329,7 +330,7 @@ class WC_Stripe_Express_Checkout_Element {
 			return;
 		}
 
-		$asset_path   = WC_STRIPE_PLUGIN_PATH . '/build/express_checkout.asset.php';
+		$asset_path   = WC_STRIPE_PLUGIN_PATH . '/build/express-checkout.asset.php';
 		$version      = WC_STRIPE_VERSION;
 		$dependencies = [];
 		if ( file_exists( $asset_path ) ) {
@@ -345,7 +346,7 @@ class WC_Stripe_Express_Checkout_Element {
 		wp_register_script( 'stripe', 'https://js.stripe.com/v3/', '', '3.0', true );
 		wp_register_script(
 			'wc_stripe_express_checkout',
-			WC_STRIPE_PLUGIN_URL . '/build/express_checkout.js',
+			WC_STRIPE_PLUGIN_URL . '/build/express-checkout.js',
 			array_merge( [ 'jquery', 'stripe' ], $dependencies ),
 			$version,
 			true
@@ -353,7 +354,7 @@ class WC_Stripe_Express_Checkout_Element {
 
 		wp_enqueue_style(
 			'wc_stripe_express_checkout_style',
-			WC_STRIPE_PLUGIN_URL . '/build/express_checkout.css',
+			WC_STRIPE_PLUGIN_URL . '/build/express-checkout.css',
 			[],
 			$version
 		);
@@ -383,7 +384,7 @@ class WC_Stripe_Express_Checkout_Element {
 			return;
 		}
 
-		$order = WC_Stripe_Order::get_by_id( $order_id );
+		$order = wc_get_order( $order_id );
 
 		$express_checkout_type = wc_clean( wp_unslash( $_POST['express_checkout_type'] ) );
 		$payment_method_title  = '';
@@ -421,7 +422,7 @@ class WC_Stripe_Express_Checkout_Element {
 
 		// If $theorder is empty (i.e. non-HPOS), fallback to using the global post object.
 		if ( empty( $theorder ) && ! empty( $GLOBALS['post']->ID ) ) {
-			$theorder = WC_Stripe_Order::get_by_id( $GLOBALS['post']->ID );
+			$theorder = wc_get_order( $GLOBALS['post']->ID );
 		}
 
 		if ( ! is_object( $theorder ) ) {
@@ -435,7 +436,7 @@ class WC_Stripe_Express_Checkout_Element {
 			$suffix                = WC_Stripe_Express_Checkout_Helper::get_payment_method_title_suffix();
 			array_walk(
 				$express_method_titles,
-				function( &$value, $key ) use ( $suffix ) {
+				function ( &$value, $key ) use ( $suffix ) {
 					$value .= $suffix;
 				}
 			);

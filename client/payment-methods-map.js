@@ -9,6 +9,7 @@ import {
 	PAYMENT_METHOD_BACS,
 	PAYMENT_METHOD_BANCONTACT,
 	PAYMENT_METHOD_BECS,
+	PAYMENT_METHOD_BLIK,
 	PAYMENT_METHOD_BOLETO,
 	PAYMENT_METHOD_CARD,
 	PAYMENT_METHOD_CASHAPP,
@@ -31,6 +32,10 @@ const isAcssEnabled = window.wc_stripe_settings_params?.is_acss_enabled === '1';
 const isBacsEnabled = window.wc_stripe_settings_params?.is_bacs_enabled === '1';
 const isBecsDebitEnabled =
 	window.wc_stripe_settings_params?.is_becs_debit_enabled === '1';
+const isBlikEnabled = window.wc_stripe_settings_params?.is_blik_enabled === '1';
+const isSepaTokensEnabled =
+	window.wc_stripe_settings_params?.is_sepa_tokens_enabled === '1';
+
 const paymentMethodsMap = {
 	card: {
 		id: PAYMENT_METHOD_CARD,
@@ -42,6 +47,7 @@ const paymentMethodsMap = {
 		Icon: icons.card,
 		currencies: [],
 		allows_manual_capture: true,
+		supportsRecurring: true,
 	},
 	giropay: {
 		id: PAYMENT_METHOD_GIROPAY,
@@ -119,6 +125,7 @@ const paymentMethodsMap = {
 		),
 		Icon: icons.sepa_debit,
 		currencies: [ 'EUR' ],
+		supportsRecurring: true,
 	},
 	sepa: {
 		id: 'sepa',
@@ -129,6 +136,7 @@ const paymentMethodsMap = {
 		),
 		Icon: icons.sepa_debit,
 		currencies: [ 'EUR' ],
+		supportsRecurring: true,
 	},
 	sofort: {
 		id: PAYMENT_METHOD_SOFORT,
@@ -139,6 +147,7 @@ const paymentMethodsMap = {
 		),
 		Icon: icons.sofort,
 		currencies: [ 'EUR' ],
+		supportsRecurring: true,
 	},
 	eps: {
 		id: PAYMENT_METHOD_EPS,
@@ -159,6 +168,7 @@ const paymentMethodsMap = {
 		),
 		Icon: icons.bancontact,
 		currencies: [ 'EUR' ],
+		supportsRecurring: isSepaTokensEnabled,
 	},
 	ideal: {
 		id: PAYMENT_METHOD_IDEAL,
@@ -169,6 +179,7 @@ const paymentMethodsMap = {
 		),
 		Icon: icons.ideal,
 		currencies: [ 'EUR' ],
+		supportsRecurring: isSepaTokensEnabled,
 	},
 	p24: {
 		id: PAYMENT_METHOD_P24,
@@ -265,6 +276,7 @@ const paymentMethodsMap = {
 		Icon: icons.cashapp,
 		currencies: [ 'USD' ],
 		capability: 'cashapp_payments',
+		supportsRecurring: true,
 	},
 };
 
@@ -279,6 +291,7 @@ if ( isAchEnabled ) {
 		),
 		Icon: icons.us_bank_account,
 		currencies: [ 'USD' ],
+		supportsRecurring: true,
 	};
 }
 
@@ -293,6 +306,7 @@ if ( isAcssEnabled ) {
 		),
 		Icon: icons.acss_debit,
 		currencies: [ 'CAD' ],
+		supportsRecurring: true,
 	};
 }
 
@@ -307,6 +321,7 @@ if ( isBacsEnabled ) {
 		),
 		Icon: icons.bacs_debit,
 		currencies: [ 'GBP' ],
+		supportsRecurring: true,
 	};
 }
 
@@ -316,11 +331,26 @@ if ( isBecsDebitEnabled ) {
 		id: PAYMENT_METHOD_BECS,
 		label: __( 'BECS Direct Debit', 'woocommerce-gateway-stripe' ),
 		description: __(
-			'BECS Direct Debit enables customers in Australia to pay by providing their bank account details.',
+			'Australia BECS Direct Debit enables your store to accept payments from customers with an Australian bank account.',
 			'woocommerce-gateway-stripe'
 		),
 		Icon: icons.au_becs_debit,
 		currencies: [ 'AUD' ],
+		supportsRecurring: true,
+	};
+}
+
+// Enable BLIK according to feature flag value.
+if ( isBlikEnabled ) {
+	paymentMethodsMap.blik = {
+		id: PAYMENT_METHOD_BLIK,
+		label: 'BLIK',
+		description: __(
+			'BLIK enables customers in Poland to pay directly via online payouts from their bank account.',
+			'woocommerce-gateway-stripe'
+		),
+		Icon: icons.blik,
+		currencies: [ 'PLN' ],
 	};
 }
 
