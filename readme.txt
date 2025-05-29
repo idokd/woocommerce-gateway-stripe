@@ -113,6 +113,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 = 9.5.3 - xxxx-xx-xx =
 
 * Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats
+* Fix - Adds an exception to be thrown when the order item quantity is zero, during the retrieval of level 3 data from an order.
 * Tweak - Track charge completed via webhooks in order notes
 * Fix - Ensure that we migrate payment_request_button_size=medium on upgrade
 
