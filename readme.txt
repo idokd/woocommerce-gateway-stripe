@@ -132,7 +132,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Dev - Add e2e tests for BECS
 * Fix - Send correct attribute when setting the default payment method.
 * Dev - Build dynamic WordPress and WooCommerce dependencies for unit tests.
-* Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats 
+* Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats
 * Fix - Void intent when cancelling an uncaptured order
 * Fix - Hide future payments message from payment element when manual renewal is required
 * Tweak - Track charge completed via webhooks in order notes
@@ -140,5 +140,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Ensure that we migrate payment_request_button_size=medium on upgrade
 * Fix - Apply shipping country restrictions to Express Checkout
 * Dev - Prevent changelog entries with trailing periods
+* Tweak - Add prefix to the custom database cache keys
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
