@@ -116,5 +116,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Adds an exception to be thrown when the order item quantity is zero, during the retrieval of level 3 data from an order.
 * Tweak - Track charge completed via webhooks in order notes
 * Fix - Ensure that we migrate payment_request_button_size=medium on upgrade
+* Fix - Show correct price in express checkout for zero decimal currencies
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
