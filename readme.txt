@@ -118,5 +118,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Ensure that we migrate payment_request_button_size=medium on upgrade
 * Fix - Show correct price in express checkout for zero decimal currencies
 * Fix - Fixes a possible fatal error with Multibanco purchases when generating the email instructions.
+* Fix - Fix buggy unsaved changes warning in settings page
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
