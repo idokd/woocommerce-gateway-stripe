@@ -110,7 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.5.3 - xxxx-xx-xx =
+= 9.5.3 - 2025-06-23 =
 
 * Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats
 * Fix - Adds an exception to be thrown when the order item quantity is zero, during the retrieval of level 3 data from an order
