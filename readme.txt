@@ -119,6 +119,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Fixes a possible fatal error with Multibanco purchases when generating the email instructions
 * Fix - Fix buggy unsaved changes warning in settings page
 * Fix - Use the platform's payment method configuration id constant when rendering the Optimized Checkout
+* Update - Improve checks in voucher purchase flow
 * Tweak - Track charge completed via webhooks in order notes
 
 = 9.5.2 - 2025-05-22 =
