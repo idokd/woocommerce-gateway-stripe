@@ -56,6 +56,7 @@
 * Fix - Use the platform's payment method configuration id constant when rendering the Optimized Checkout
 * Dev - Add Klarna e2e tests
 * Update - Improve checks in voucher purchase flow
+* Fix - Fixes page crash when Klarna payment method is not supported in the merchant's country by returning an empty array instead of throwing an error
 
 = 9.5.2 - 2025-05-22 =
 * Add - Implement custom database cache for persistent caching with in-memory optimization.
