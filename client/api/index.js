@@ -6,7 +6,6 @@ import {
 	getCustomerNote,
 	getExpressCheckoutData,
 	getExpressCheckoutAjaxURL,
-	getRequiredFieldDataFromCheckoutForm,
 } from 'wcstripe/express-checkout/utils';
 import { getStripeServerData } from 'wcstripe/stripe-utils';
 import {
@@ -622,14 +621,23 @@ export default class WCStripeAPI {
 	/**
 	 * Creates order based on Express Checkout ECE payment method.
 	 *
-	 * @param {Object} paymentData Order data.
+	 * @param {Object} orderData Order data.
 	 * @return {Promise} Promise for the request to the server.
 	 */
-	expressCheckoutECECreateOrder( paymentData ) {
-		return this.postToBlocksAPI( '/wc/store/v1/checkout', {
-			...getRequiredFieldDataFromCheckoutForm( paymentData ),
-			customer_note: getCustomerNote(),
-		} );
+	expressCheckoutECECreateOrder( orderData ) {
+		return this.postToBlocksAPI(
+			'/wc/store/v1/checkout',
+			{
+				...orderData,
+				customer_note: getCustomerNote(),
+			},
+			{
+				'X-WCSTRIPE-EXPRESS-CHECKOUT': true,
+				'X-WCSTRIPE-EXPRESS-CHECKOUT-NONCE': getExpressCheckoutData(
+					'nonce'
+				)?.wc_store_api_express_checkout,
+			}
+		);
 	}
 
 	/**
@@ -654,14 +662,16 @@ export default class WCStripeAPI {
 	 *
 	 * @param {string} path The path to post to.
 	 * @param {Object} data The data to post.
+	 * @param {Object} headers The headers for the request.
 	 * @return {Promise} The promise for the request to the server.
 	 */
-	postToBlocksAPI( path, data ) {
+	postToBlocksAPI( path, data, headers = {} ) {
 		return apiFetch( {
 			method: 'POST',
 			path,
 			headers: {
 				Nonce: getExpressCheckoutData( 'nonce' )?.wc_store_api,
+				...headers,
 			},
 			data,
 		} );

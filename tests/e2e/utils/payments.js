@@ -275,10 +275,13 @@ export async function setupShortcodeCheckout( page, billingDetails = null ) {
 			'#billing_country',
 			billingDetails[ 'country_iso' ]
 		);
-		await page.selectOption(
-			'#billing_state',
-			billingDetails[ 'state_iso' ]
-		);
+
+		if ( billingDetails[ 'state_iso' ] ) {
+			await page.selectOption(
+				'#billing_state',
+				billingDetails[ 'state_iso' ]
+			);
+		}
 
 		for ( const fieldName of Object.keys( billingDetails ) ) {
 			if (
@@ -317,6 +320,7 @@ export async function setupBlocksCheckout( page, billingDetails = null ) {
 		address_1: 'Address',
 		address_2: 'Apartment, suite, etc. (optional)',
 		city: 'City',
+		suburb: 'Suburb', // used in Australia. This field is needed in BECS tests.
 		phone: 'Phone (optional)',
 		email: 'Email address',
 	};
@@ -347,9 +351,11 @@ export async function setupBlocksCheckout( page, billingDetails = null ) {
 			.getByLabel( 'Country/Region' )
 			.selectOption( { label: billingDetails[ 'country' ] } );
 
-		await page
-			.locator( '#shipping-state', { exact: true } )
-			.selectOption( { label: billingDetails[ 'state' ] } );
+		if ( billingDetails[ 'state' ] ) {
+			await page
+				.locator( '#shipping-state', { exact: true } )
+				.selectOption( { label: billingDetails[ 'state' ] } );
+		}
 
 		// Expand the address 2 field.
 		if ( ! isCollapsed ) {
@@ -408,13 +414,14 @@ export const setupACHCheckout = async ( page, checkoutType = 'blocks' ) => {
 		await page
 			.locator( 'label' )
 			.filter( { hasText: 'ACH Direct Debit' } )
-			.click();
+			.dispatchEvent( 'click' );
 
 		// Wait for the iframe to be ready
-		await page.waitForSelector(
-			'#radio-control-wc-payment-method-options-stripe_us_bank_account__content iframe[src*="elements-inner-payment"]'
+		const frameHandle = await page.waitForSelector(
+			'#radio-control-wc-payment-method-options-stripe_us_bank_account__content iframe[name^="__privateStripeFrame"]'
 		);
-		await page.waitForTimeout( 1000 );
+		const stripeFrame = await frameHandle.contentFrame();
+		await stripeFrame.waitForLoadState( 'networkidle' );
 
 		// Click "Test Institution"
 		await page
@@ -422,7 +429,7 @@ export const setupACHCheckout = async ( page, checkoutType = 'blocks' ) => {
 				'#radio-control-wc-payment-method-options-stripe_us_bank_account__content iframe[src*="elements-inner-payment"]'
 			)
 			.getByText( 'Test Institution' )
-			.click();
+			.dispatchEvent( 'click' );
 	} else {
 		await setupShortcodeCheckout(
 			page,
@@ -430,14 +437,16 @@ export const setupACHCheckout = async ( page, checkoutType = 'blocks' ) => {
 		);
 
 		// Select ACH in shortcode checkout
-		await page.getByText( 'ACH Direct Debit' ).click();
-		await page.waitForTimeout( 1000 );
+		const achLabel = page.getByText( 'ACH Direct Debit' );
+		await achLabel.waitFor( { state: 'visible' } );
+		await achLabel.dispatchEvent( 'click' );
 
 		// Wait for the iframe to be ready
-		await page.waitForSelector(
-			'.wc_payment_method.payment_method_stripe_us_bank_account iframe[src*="elements-inner-payment"]'
+		const frameHandle = await page.waitForSelector(
+			'.payment_method_stripe_us_bank_account iframe[name^="__privateStripeFrame"]'
 		);
-		await page.waitForTimeout( 1000 );
+		const stripeFrame = await frameHandle.contentFrame();
+		await stripeFrame.waitForLoadState( 'networkidle' );
 
 		// Click "Test Institution"
 		await page
@@ -445,7 +454,7 @@ export const setupACHCheckout = async ( page, checkoutType = 'blocks' ) => {
 				'.wc_payment_method.payment_method_stripe_us_bank_account iframe[src*="elements-inner-payment"]'
 			)
 			.getByTestId( 'featured-institution-default' )
-			.click();
+			.dispatchEvent( 'click' );
 	}
 };
 
@@ -490,41 +499,25 @@ export const setupACSSCheckout = async ( page, checkoutType = 'blocks' ) => {
 			config.get( 'addresses.customer_canada.billing' )
 		);
 
-		await page.waitForTimeout( 1000 );
-
 		// Select ACSS in blocks checkout.
-		await page
+		const acssLabel = page
 			.locator( 'label' )
-			.filter( { hasText: 'Pre-Authorized Debit' } )
-			.click();
-
-		await page.waitForTimeout( 1000 );
-
-		// Wait for the iframe to be ready.
-		await page.waitForSelector(
-			'#radio-control-wc-payment-method-options-stripe_acss_debit__content iframe[src*="elements-inner-payment"]'
-		);
-
-		await page.waitForTimeout( 1000 );
+			.filter( { hasText: 'Pre-Authorized Debit' } );
+		await acssLabel.waitFor( { state: 'visible' } );
+		await acssLabel.click();
 	} else {
 		await setupShortcodeCheckout(
 			page,
 			config.get( 'addresses.customer_canada.billing' )
 		);
 
-		await page.waitForTimeout( 1000 );
-
 		// Select ACSS in shortcode checkout.
-		await page.getByText( 'Pre-Authorized Debit' ).click();
-
-		await page.waitForTimeout( 1000 );
-
-		// Wait for the iframe to be ready.
-		await page.waitForSelector(
-			'.wc_payment_method.payment_method_stripe_acss_debit iframe[src*="elements-inner-payment"]'
-		);
-		await page.waitForTimeout( 1000 );
+		const acssLabel = page.getByText( 'Pre-Authorized Debit' );
+		await acssLabel.waitFor( { state: 'visible' } );
+		await acssLabel.click();
 	}
+
+	await page.waitForTimeout( 1000 );
 };
 
 /**
@@ -699,6 +692,19 @@ export async function clickPlaceOrder( page ) {
 	await page
 		.getByRole( 'button', { name: 'Place order' } )
 		.dispatchEvent( 'click' );
+
+	// If we click the Place button too fast, we might sometimes get an error.
+	// One way to handle this is to always wait a few seconds before clicking Place order.
+	// But that would make the test flaky and slows down the test suite. So instead,
+	// we check if the error message is present and if it is, we dispatch the click event again.
+	const errorElement = page
+		.getByLabel( 'Checkout' )
+		.getByText( 'Your payment information is' );
+	if ( await errorElement.isVisible() ) {
+		await page
+			.getByRole( 'button', { name: 'Place order' } )
+			.dispatchEvent( 'click' );
+	}
 }
 
 /**
@@ -781,4 +787,171 @@ export const fillOCDetails = async ( page, card, checkoutType = 'blocks' ) => {
 		.locator( '[name="expiry"]' )
 		.fill( card.expires.month + card.expires.year );
 	await paymentFrame.locator( '[name="cvc"]' ).fill( card.cvc );
+};
+
+/**
+ * Fill BLIK payment details in the checkout form.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} code (optional) 6-digit BLIK code to use. Defaults to '123456'.
+ */
+export const fillBLIKDetails = async ( page, code = '123456' ) => {
+	// Assumes the BLIK code input has a label or placeholder containing 'BLIK code'.
+	await page.getByLabel( /blik code/i ).fill( code );
+};
+
+/**
+ * Set up the checkout page for BECS payment.
+ *
+ * @param {Page} page Playwright page fixture.
+ * @param {string} checkoutType The type of checkout ('blocks' or 'shortcode').
+ */
+export const setupBECSCheckout = async ( page, checkoutType = 'blocks' ) => {
+	await emptyCart( page );
+	await setupCart( page );
+
+	if ( checkoutType === 'blocks' ) {
+		// On block checkout page for Australian address, there is no city, instead there are a suburbs.
+		// In the backend we keep this suburb value in the city field.
+		// In 'setupBlocksCheckout' we find the elemnts by their labels. As there is no city field on the block checkout page,
+		// we remove the city field from the billing details to prevent the 'setupBlocksCheckout' from failing when waiting for the city field
+		// and add the suburb value to the city field.
+		const billingDetails = {
+			...config.get( 'addresses.customer_australia.billing' ),
+			suburb: config.get( 'addresses.customer_australia.billing' ).city,
+		};
+		delete billingDetails.city;
+
+		await setupBlocksCheckout( page, billingDetails );
+
+		// Select BECS in blocks checkout.
+		const becsLabel = page
+			.locator( 'label' )
+			.filter( { hasText: 'BECS Direct Debit' } );
+		await becsLabel.waitFor( { state: 'visible' } );
+		await becsLabel.dispatchEvent( 'click' );
+	} else {
+		await setupShortcodeCheckout(
+			page,
+			config.get( 'addresses.customer_australia.billing' )
+		);
+
+		// Select BECS in shortcode checkout.
+		const becsLabel = page.getByText( 'BECS Direct Debit' );
+		await becsLabel.waitFor( { state: 'visible' } );
+		await becsLabel.dispatchEvent( 'click' );
+		const frameHandle = await page.waitForSelector(
+			'.payment_method_stripe_au_becs_debit iframe[name^="__privateStripeFrame"]'
+		);
+		const stripeFrame = await frameHandle.contentFrame();
+
+		// Wait for the iFrame to load.
+		await stripeFrame.waitForLoadState( 'networkidle' );
+	}
+};
+
+/**
+ * Interact with the Stripe Elements iframe to fill in the BECS details.
+ *
+ * @param {Page} page Playwright page fixture.
+ */
+export const fillBECSDetails = async ( page, checkoutType = 'blocks' ) => {
+	let frameHandle;
+	if ( checkoutType === 'shortcode' ) {
+		frameHandle = await page.waitForSelector(
+			'.wc_payment_method.payment_method_stripe_au_becs_debit iframe[src*="elements-inner-payment"]'
+		);
+	} else {
+		frameHandle = await page.waitForSelector(
+			'#radio-control-wc-payment-method-options-stripe_au_becs_debit__content iframe[src*="elements-inner-payment"]'
+		);
+	}
+
+	const stripeFrame = await frameHandle.contentFrame();
+
+	// Wait for the iFrame to load.
+	await stripeFrame.waitForLoadState( 'networkidle' );
+
+	await stripeFrame
+		.locator( '[name="auBankAccountNumber"]' )
+		.fill( '000123456' );
+	await stripeFrame.locator( '[name="auBsb"]' ).fill( '000000' );
+};
+
+/**
+ * Set up the checkout page for Affirm payment.
+ *
+ * @param {Page} page Playwright page fixture.
+ * @param {string} checkoutType The type of checkout ('blocks' or 'shortcode').
+ */
+export const setupAffirmCheckout = async ( page, checkoutType = 'blocks' ) => {
+	// Affirm is only available when the price is above $50.
+	const lineItems = [ [ config.get( 'products.simple.name' ), 5 ] ];
+
+	await emptyCart( page );
+	await setupCart( page, lineItems );
+
+	const isBlocks = checkoutType === 'blocks';
+
+	// Fill billing details
+	const billingDetails = config.get( 'addresses.customer.billing' );
+	if ( isBlocks ) {
+		await setupBlocksCheckout( page, billingDetails );
+	} else {
+		await setupShortcodeCheckout( page, billingDetails );
+	}
+
+	// Wait for the payment method selector to be available
+	if ( isBlocks ) {
+		const affirmLabel = page.locator( 'label', { hasText: 'Affirm' } );
+		await affirmLabel.waitFor( { state: 'visible' } );
+		await affirmLabel.click();
+		await page.waitForSelector(
+			'#radio-control-wc-payment-method-options-stripe_affirm__content'
+		);
+	} else {
+		const affirmLabel = page.getByText( 'Affirm' );
+		await affirmLabel.waitFor( { state: 'visible' } );
+		await affirmLabel.click();
+		await page.waitForSelector(
+			'.payment_method_stripe_affirm iframe[src*="elements-inner-payment"]'
+		);
+	}
+};
+
+/**
+ * Set up the checkout page for Klarna payment.
+ *
+ * @param {Page} page Playwright page fixture.
+ * @param {string} checkoutType The type of checkout ('blocks' or 'shortcode').
+ */
+export const setupKlarnaCheckout = async ( page, checkoutType = 'blocks' ) => {
+	await emptyCart( page );
+	await setupCart( page );
+
+	const isBlocks = checkoutType === 'blocks';
+
+	// Fill billing details
+	const billingDetails = config.get( 'addresses.customer.billing' );
+	if ( isBlocks ) {
+		await setupBlocksCheckout( page, billingDetails );
+	} else {
+		await setupShortcodeCheckout( page, billingDetails );
+	}
+
+	// Wait for the payment method selector to be available
+	if ( isBlocks ) {
+		const klarnaLabel = page.locator( 'label', { hasText: 'Klarna' } );
+		await klarnaLabel.waitFor( { state: 'visible' } );
+		await klarnaLabel.click();
+		await page.waitForSelector(
+			'#radio-control-wc-payment-method-options-stripe_klarna__content'
+		);
+	} else {
+		const klarnaLabel = page.getByText( 'Klarna' );
+		await klarnaLabel.waitFor( { state: 'visible' } );
+		await klarnaLabel.click();
+		await page.waitForSelector(
+			'.payment_method_stripe_klarna iframe[src*="elements-inner-payment"]'
+		);
+	}
 };
