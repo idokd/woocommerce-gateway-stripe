@@ -8,6 +8,7 @@
 * Add - A notice to take user back to WC onboarding flow after connecting the Stripe account
 * Tweak - Deprecate wc_connect_* filters
 * Fix - Prevent text field reset while editing Optimized Checkout title
+* Update - Improvements to custom checkout fields support for express checkout
 
 = 9.6.0 - 2025-07-07 =
 * Fix - Register Express Checkout script before use to restore buttons on “order-pay” pages

@@ -112,5 +112,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 9.7.0 - xxxx-xx-xx =
 * Fix - Fixes a possible fatal error when trying to generate the order signature for a `WC_Order_Refund` object
+* Update - Improvements to custom checkout fields support for express checkout
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
