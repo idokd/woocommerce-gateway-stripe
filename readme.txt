@@ -130,5 +130,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Update - Enhanced logging system with support for all log levels and improved context handling
 * Fix - Set default values for custom field options
 * Fix - Enforce rate limiter for failed add payment method attempts
+* Update - Add the number of pending webhooks to the Account status section
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
