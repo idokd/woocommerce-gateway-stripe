@@ -112,6 +112,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 9.7.1 - xxxx-xx-xx
 * Add - Add state mapping for Lithuania in express checkout
+* Tweak - Check for checkout validation error before creating a payment method in Stripe
 
 = 9.7.0 - 2025-07-21 =
 
