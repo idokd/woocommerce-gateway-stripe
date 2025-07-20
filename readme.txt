@@ -111,7 +111,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 9.7.1 - xxxx-xx-xx
-
+* Add - Add state mapping for Lithuania in express checkout
 
 = 9.7.0 - 2025-07-21 =
 

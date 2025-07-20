@@ -1,6 +1,7 @@
 *** Changelog ***
 
 = 9.7.1 - xxxx-xx-xx =
+* Add - Add state mapping for Lithuania in express checkout
 
 = 9.7.0 - 2025-07-21 =
 * Update - Removes BNPL payment methods (Klarna and Affirm) when other official plugins are active
