@@ -3,6 +3,7 @@
 = 9.7.1 - xxxx-xx-xx =
 * Add - Add state mapping for Lithuania in express checkout
 * Tweak - Check for checkout validation error before creating a payment method in Stripe
+* Fix - Fix required field error message and PHP warning for custom checkout fields that don't have a label
 
 = 9.7.0 - 2025-07-21 =
 * Update - Removes BNPL payment methods (Klarna and Affirm) when other official plugins are active
