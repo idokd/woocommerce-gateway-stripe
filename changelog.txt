@@ -5,6 +5,7 @@
 * Tweak - Check for checkout validation error before creating a payment method in Stripe
 * Fix - Prevent multiple save appearance AJAX calls on Block Checkout
 * Fix - Fix required field error message and PHP warning for custom checkout fields that don't have a label
+* Fix - Fix fatal when processing setup intents for free subscriptions via webhooks
 
 = 9.7.0 - 2025-07-21 =
 * Update - Removes BNPL payment methods (Klarna and Affirm) when other official plugins are active

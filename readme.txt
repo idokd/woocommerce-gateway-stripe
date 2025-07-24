@@ -115,6 +115,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Tweak - Check for checkout validation error before creating a payment method in Stripe
 * Fix - Prevent multiple save appearance AJAX calls on Block Checkout
 * Fix - Fix required field error message and PHP warning for custom checkout fields that don't have a label
+* Fix - Fix fatal when processing Boleto setup intents via webhooks
 
 = 9.7.0 - 2025-07-21 =
 
