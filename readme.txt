@@ -4,7 +4,7 @@ Tags: credit card, stripe, payments, woocommerce, woo
 Requires at least: 6.6
 Tested up to: 6.8.2
 Requires PHP: 7.4
-Stable tag: 9.7.0
+Stable tag: 9.7.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Attributions: thorsten-stripe
@@ -110,7 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.7.1 - xxxx-xx-xx =
+= 9.7.1 - 2025-07-28 =
 
 * Fix - Fix fatal when processing setup intents for free subscriptions via webhooks
 * Fix - Fix required field error message and PHP warning for custom checkout fields that don't have a label
