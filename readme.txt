@@ -136,5 +136,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Dev - Move some testing and compiler node dependencies to devDependencies
 * Dev - Minor CSS change to comply with a SASS rule deprecation
 * Dev - Remove LPM feature flags
+* Dev - Update SCSS to replace @import with @use and @forward
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
