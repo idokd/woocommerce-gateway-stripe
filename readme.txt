@@ -140,5 +140,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Dev - Update SCSS to replace @import with @use and @forward
 * Update - Copy for the Optimized Checkout settings and notices
 * Dev - Implements WooCommerce constants for the tax statuses
+* Update - Removes the ability to change the title for the Optimized Checkout payment element, as it is now set to "Stripe" by default
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
