@@ -111,36 +111,49 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 9.8.0 - xxxx-xx-xx =
+
+**New Features**
+
+* Optimized Checkout is now available to all users via a configuration setting.
+  - Optimized Checkout maximizes conversion by displaying the most relevant payment methods for each customer.
+* After several consecutive 401 (Unauthorized) responses, we will now temporarily stop making Stripe API calls to prevent further authentication failures. API calls will resume automatically after a cooldown period.
+* When we detect the official Affirm or Klarna plugin is active, we will deactivate the related Stripe payment method.
+
+**Important Fixes and Updates**
+
+* Fix - Reduce number of calls to Stripe payment_methods API
+* Fix - Fixes issues related to booking multiple slots with express checkout payment methods enabled
+* Fix - 3DS authentication modal not shown when using Google Pay
+* Fix - Remove validation error check from classic checkout before payment method creation
+* Fix - Only clear customer cache when an action has been performed
+* Fix - Free trial subscription orders with payment methods that require redirection (eg: iDeal, Bancontact)
+* Add - Adds a new bulk action option to the subscriptions listing screen to check for detached payment methods
+* Update - Improve Stripe API connector logging to include request/response context
+
+**Other Fixes**
+
+* Fix - Require credit cards to be enabled before Apple Pay and Google Pay can be enabled in PMC
+* Fix - Force the card payment method to be enabled when the Optimized Checkout is enabled in the merchant's Payment Method Configuration
+* Fix - Handle missing customer when calling payment_methods API
 * Add - Adds the current setting value for the Optimized Checkout to the Stripe System Status Report data
 * Add - A new pill to the payment methods page to indicate the credit card requirement when the Optimized Checkout feature is enabled
-* Add - Tracks the toggle of the Optimized Checkout feature in the promotional banner
-* Fix - Force the card payment method to be enabled when the Optimized Checkout is enabled in the merchant's Payment Method Configuration
-* Update - Deactivates Affirm or Klarna when other official plugins are active in merchant's Payment Method Configuration
-* Fix - Fixes issues related to booking multiple slots with express checkout payment methods enabled
 * Fix - Update the Optimized Checkout promotional inbox note to link to the relevant section in the Stripe settings page
-* Add - Makes the Optimized Checkout feature available for all merchants by default
-* Add - Adds a new bulk action option to the subscriptions listing screen to check for detached payment methods
-* Dev - Use product type constants that were added in WooCommerce 9.7
-* Dev - Removes the inclusion of the deprecated WC_Stripe_Order class
 * Add - Introduces a new banner to promote the Optimized Checkout feature in the Stripe settings page for versions 9.8 and above
 * Add - Introduces a new inbox note to promote the Optimized Checkout feature on version 9.8 and later
 * Tweak - Use wp_ajax prefix for its built-in security for Add Payment Method action
-* Fix - Prevent Stripe API calls after several consecutive 401 (Unauthorized) responses
-* Fix - 3DS authentication modal not shown when using Google Pay
-* Update - Improve Stripe API connector logging to include request/response context
-* Fix - Require credit cards to be enabled before Apple Pay and Google Pay can be enabled in PMC
-* Fix - Free trial subscription orders with payment methods that require redirection (eg: iDeal, Bancontact)
+* Update - Removes the ability to change the title for the Optimized Checkout payment element, as it is now set to "Stripe" by default
+
+**Internal Changes and Upcoming Features**
+
+* Add - Tracks the toggle of the Optimized Checkout feature in the promotional banner
+* Dev - Use product type constants that were added in WooCommerce 9.7
+* Dev - Removes the inclusion of the deprecated WC_Stripe_Order class
 * Tweak - Update checkout error message for invalid API key to be more generic and user-friendly
+* Update - Copy for the Optimized Checkout settings and notices
 * Tweak - Disable Amazon Pay in the merchant's Payment Method Configuration object if it is still behind a feature flag
-* Fix - Only clear customer cache when an action has been performed
-* Fix - Remove validation error check from classic checkout before payment method creation
 * Dev - Clean up LPM (Local Payment Method) feature flags and related code
 * Dev - Move some testing and compiler node dependencies to devDependencies
 * Dev - Minor CSS change to comply with a SASS rule deprecation
 * Dev - Update SCSS to replace @import with @use and @forward
-* Update - Copy for the Optimized Checkout settings and notices
-* Update - Removes the ability to change the title for the Optimized Checkout payment element, as it is now set to "Stripe" by default
-* Fix - Handle missing customer when calling payment_methods API
-* Fix - Reduce number of calls to Stripe payment_methods API
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
