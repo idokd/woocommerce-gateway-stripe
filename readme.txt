@@ -142,6 +142,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Add - Introduces a new inbox note to promote the Optimized Checkout feature on version 9.8 and later
 * Tweak - Use wp_ajax prefix for its built-in security for Add Payment Method action
 * Update - Removes the ability to change the title for the Optimized Checkout payment element, as it is now set to "Stripe" by default
+* Fix - Add `get_icon_url()` to Payment Method base class
 
 **Internal Changes and Upcoming Features**
 
