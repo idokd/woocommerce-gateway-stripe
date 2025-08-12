@@ -1,14 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import React, { useContext } from 'react';
 import userEvent from '@testing-library/user-event';
-import SinglePaymentElementFeature from 'wcstripe/settings/advanced-settings-section/single-payment-element-feature';
+import OptimizedCheckoutFeature from 'wcstripe/settings/advanced-settings-section/optimized-checkout-feature';
 import UpeToggleContext from 'wcstripe/settings/upe-toggle/context';
 
 jest.useFakeTimers();
 
-describe( 'Single Payment Element feature setting', () => {
+describe( 'Optimized Checkout Element feature setting', () => {
 	it( 'should render', () => {
-		render( <SinglePaymentElementFeature /> );
+		render( <OptimizedCheckoutFeature /> );
 
 		expect(
 			screen.queryByText(
@@ -29,12 +29,12 @@ describe( 'Single Payment Element feature setting', () => {
 		render(
 			<div>
 				<UpdateUpeDisabledFlagMock />
-				<SinglePaymentElementFeature />
+				<OptimizedCheckoutFeature />
 			</div>
 		);
 
 		const checkbox = screen.getByTestId(
-			'single-payment-element-checkbox'
+			'optimized-checkout-element-checkbox'
 		);
 
 		userEvent.click( checkbox );
