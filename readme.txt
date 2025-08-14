@@ -110,6 +110,11 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 9.8.1 - xxxx-xx-xx =
+
+* Fix - Remove connection type requirement from PMC sync migration attempt
+
+
 = 9.8.0 - 2025-08-11 =
 
 **New Features**
