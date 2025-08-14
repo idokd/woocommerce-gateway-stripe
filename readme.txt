@@ -112,8 +112,10 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 9.8.1 - xxxx-xx-xx =
 
-* Fix - Remove connection type requirement from PMC sync migration attempt
+**Important Fixes and Updates**
 
+* Fix - Remove connection type requirement from PMC sync migration attempt
+* Fix - Relax customer validation that was preventing payments from the pay for order page
 
 = 9.8.0 - 2025-08-11 =
 
