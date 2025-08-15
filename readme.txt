@@ -116,6 +116,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 * Fix - Remove connection type requirement from PMC sync migration attempt
 * Fix - Relax customer validation that was preventing payments from the pay for order page
+* Fix - Prevent the PMC migration to run when the plugin is not connected to Stripe
 
 = 9.8.0 - 2025-08-11 =
 
