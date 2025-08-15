@@ -1,6 +1,6 @@
 *** Changelog ***
 
-= 9.8.1 - xxxx-xx-xx =
+= 9.8.1 - 2025-08-15 =
 * Fix - Remove connection type requirement from PMC sync migration attempt
 * Fix - Relax customer validation that was preventing payments from the pay for order page
 * Fix - Prevent the PMC migration to run when the plugin is not connected to Stripe
