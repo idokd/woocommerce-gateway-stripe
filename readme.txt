@@ -111,6 +111,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 9.9.0 - xxxx-xx-xx =
+* Dev - Introduces a new helper method to identify Stripe orders
 * Add - Setting to allow merchants to control the layout of the Optimized Checkout payment element on the checkout page
 * Fix - Removes the credit card payment method requirement for the Optimized Checkout feature
 * Fix - Payment method test instructions not showing up for the Optimized Checkout payment element
