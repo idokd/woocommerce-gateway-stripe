@@ -111,6 +111,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 9.9.0 - xxxx-xx-xx =
+* Dev - Replaces some payment method instantiation logic for the Optimized Checkout with calls to the `get_payment_method_instance` method
 * Dev - Multiple lint fixes in preparation for the Node 20 upgrade
 * Dev - Introduces a new helper method to identify Stripe orders
 * Add - Setting to allow merchants to control the layout of the Optimized Checkout payment element on the checkout page
