@@ -173,6 +173,10 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 		}
 	}
 
+	if ( getStripeServerData()?.fonts ) {
+		options.fonts.push( ...getStripeServerData()?.fonts );
+	}
+
 	const elements = api.getStripe().elements( options );
 
 	const attachDefaultValuesUpdateEvent = ( element ) => {
@@ -187,8 +191,8 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 		...getUpeSettings(),
 		...getDefaultValues(),
 		wallets: {
-			applePay: 'never',
-			googlePay: 'never',
+			applePay: 'auto',
+			googlePay: 'auto',
 		},
 	};
 
@@ -200,6 +204,13 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 				type: 'accordion',
 				radios: false,
 			},
+		};
+	}
+
+	if ( getStripeServerData()?.layout ) {
+		paymentElementOptions = {
+			...paymentElementOptions,
+			layout: getStripeServerData()?.layout,
 		};
 	}
 

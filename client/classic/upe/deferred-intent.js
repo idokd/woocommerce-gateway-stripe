@@ -21,7 +21,7 @@ import {
 
 jQuery( function ( $ ) {
 	// Create an API object, which will be used throughout the checkout.
-	const api = new WCStripeAPI(
+	let api = new WCStripeAPI(
 		getStripeServerData(),
 		// A promise-based interface to jQuery.post.
 		( url, args ) => {
@@ -192,6 +192,20 @@ jQuery( function ( $ ) {
 			async () => {
 				// Remove all children from the UPE elements to force a re-mount.
 				unmountStripePaymentElements();
+
+				api = new WCStripeAPI(
+					getStripeServerData(),
+					// A promise-based interface to jQuery.post.
+					( url, args ) => {
+						return new Promise( ( resolve, reject ) => {
+							jQuery
+								.post( url, args )
+								.then( resolve )
+								.fail( reject );
+						} );
+					}
+				);
+
 				await maybeMountStripePaymentElement();
 			}
 		);
