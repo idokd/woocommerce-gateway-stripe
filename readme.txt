@@ -1,15 +1,15 @@
 === WooCommerce Stripe Payment Gateway ===
 Contributors: woocommerce, automattic, royho, akeda, mattyza, bor0, woothemes
-Tags: credit card, stripe, payments, woocommerce, automattic
+Tags: credit card, stripe, payments, woocommerce, woo
 Requires at least: 6.6
-Tested up to: 6.8.1
+Tested up to: 6.8.2
 Requires PHP: 7.4
-Stable tag: 9.5.2
+Stable tag: 9.8.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Attributions: thorsten-stripe
 
-Take credit card and other payments on your store using Stripe.
+Accept debit and credit cards in 135+ currencies, many local methods like Alipay, ACH, and SEPA, and express checkout with Apple Pay and Google Pay.
 
 == Description ==
 
@@ -110,29 +110,26 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.6.0 - xxxx-xx-xx =
-
-* Dev - Implements the PSR-4 autoloading standard for the plugin unit tests (PHP).
-* Fix - Sends missing information to Stripe when completing transactions with WeChat Pay, Blik and Klarna, using the Optimized Checkout.
-* Dev - Moves the main Stripe class to a new file.
-* Dev - Renames all PHP Unit test files to follow the PSR-4.
-* Dev - Dynamically retrieves versions of WooCommerce and WordPress to use in the PHP code coverage GitHub Actions Workflow.
-* Fix - Makes payment methods dynamically available on the shortcode checkout when the Optimized Checkout is enabled depending on the saving method checkbox value.
-* Fix - Fixes a possible fatal error with Multibanco purchases when generating the email instructions.
-* Fix - Fixes a fatal error when the fingerprint property is not available for a card payment method.
-* Add - Show an icon beside the payment methods that support automatic recurring payments.
-* Fix - Fixes the payment method title when using the classic checkout with the Optimized Checkout enabled.
-* Update - Remove BACS from the unsupported 'change payment method for subscription' page.
-* Fix - Fix payment method title display when new payment settings experience is enabled
-* Fix - Prevent styles from non-checkout pages affecting the appearance of Stripe element.
-* Dev - Add e2e tests for BLIK
-* Fix - Send correct attribute when setting the default payment method.
-* Dev - Build dynamic WordPress and WooCommerce dependencies for unit tests.
-* Fix - Reimplement mapping of Express Checkout state values to align with WooCommerce's expected state formats 
-* Fix - Void intent when cancelling an uncaptured order
-* Tweak - Track charge completed via webhooks in order notes
-* Tweak - Fix a rare warning when searching customers with missing name
-* Fix - Ensure that we migrate payment_request_button_size=medium on upgrade
-* Dev - Prevent changelog entries with trailing periods
+= 9.9.0 - xxxx-xx-xx =
+* Dev - Update Javascript unit tests for compatibility with Node 20
+* Dev - Replaces some payment method instantiation logic for the Optimized Checkout with calls to the `get_payment_method_instance` method
+* Dev - Multiple lint fixes in preparation for the Node 20 upgrade
+* Dev - Introduces a new helper method to identify Stripe orders
+* Add - Setting to allow merchants to control the layout of the Optimized Checkout payment element on the checkout page
+* Fix - Removes the credit card payment method requirement for the Optimized Checkout feature
+* Fix - Payment method test instructions not showing up for the Optimized Checkout payment element
+* Add - Includes a new notice to highlight the Optimized Checkout feature above the payment methods list in the Stripe settings page
+* Update - Increases the default font size for the Optimized Checkout payment element to match the rest of the checkout form
+* Fix - Checks for the subscription payment method (if it is Stripe) when verifying for the payment method detachment
+* Dev - Implements WooCommerce constants for the tax statuses
+* Fix - Ensure all Javascript strings use the correct text domain for translation
+* Tweak - Use more specific selector in express checkout e2e tests
+* Tweak - Small improvements to e2e tests
+* Fix - Fix unnecessary Stripe API calls when rendering subscription details
+* Add - Adds a new action (`wc_stripe_webhook_received`) to allow additional actions to be taken for webhook notifications from Stripe
+* Fix - Allow checkout for logged-in users without an email in their account when a billing email is provided
+* Update - Show all available payment methods before unavailable payment methods
+* Tweak - Use smaller image for Optimized Checkout banner
+* Dev - Update WooCommerce Subscriptions e2e tests after 7.8.0 release
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).

@@ -1,6 +1,6 @@
 /* global wc_stripe_settings_params */
 import { __ } from '@wordpress/i18n';
-import React, { useContext, useState } from 'react';
+import React from 'react';
 import { ExternalLink } from '@wordpress/components';
 import SettingsSection from '../settings-section';
 import PaymentRequestSection from '../payment-request-section';
@@ -8,9 +8,8 @@ import GeneralSettingsSection from '../general-settings-section';
 import LoadableSettingsSection from '../loadable-settings-section';
 import DisplayOrderCustomizationNotice from '../display-order-customization-notice';
 import { NEW_CHECKOUT_EXPERIENCE_BANNER } from 'wcstripe/settings/payment-settings/constants';
-import PromotionalBannerSection from 'wcstripe/settings/payment-settings/promotional-banner-section';
-import UpeToggleContext from 'wcstripe/settings/upe-toggle/context';
-import { useAccount } from 'wcstripe/data/account';
+import PromotionalBanner from 'wcstripe/settings/payment-settings/promotional-banner';
+import OptimizedCheckoutNotice from 'wcstripe/settings/optimized-checkout-notice';
 
 const PaymentMethodsDescription = () => {
 	return (
@@ -49,28 +48,24 @@ const PaymentRequestDescription = () => (
 	</>
 );
 
-const PaymentMethodsPanel = ( { onSaveChanges } ) => {
-	const [ showPromotionalBanner, setShowPromotionalBanner ] = useState(
-		true
-	);
-	const [ promotionalBannerType, setPromotionalBannerType ] = useState( '' );
-	const { isUpeEnabled, setIsUpeEnabled } = useContext( UpeToggleContext );
-	const { data } = useAccount();
-	const isTestModeEnabled = Boolean( data.testmode );
-	const oauthConnected = isTestModeEnabled
-		? data?.oauth_connections?.test?.connected
-		: data?.oauth_connections?.live?.connected;
-
+const PaymentMethodsPanel = ( {
+	onSaveChanges,
+	setShowPromotionalBanner,
+	showPromotionalBanner,
+	promotionalBannerType,
+	isOCEnabled,
+	setIsOCEnabled,
+	setIsUpeEnabled,
+} ) => {
 	return (
 		<>
 			{ showPromotionalBanner && (
 				<SettingsSection>
-					<PromotionalBannerSection
+					<PromotionalBanner
 						setShowPromotionalBanner={ setShowPromotionalBanner }
-						setPromotionalBannerType={ setPromotionalBannerType }
-						isUpeEnabled={ isUpeEnabled }
 						setIsUpeEnabled={ setIsUpeEnabled }
-						isConnectedViaOAuth={ oauthConnected }
+						setIsOCEnabled={ setIsOCEnabled }
+						promotionalBannerType={ promotionalBannerType }
 						oauthUrl={
 							// eslint-disable-next-line camelcase
 							wc_stripe_settings_params.stripe_oauth_url
@@ -84,6 +79,7 @@ const PaymentMethodsPanel = ( { onSaveChanges } ) => {
 			) }
 			<SettingsSection Description={ PaymentMethodsDescription }>
 				<DisplayOrderCustomizationNotice />
+				<OptimizedCheckoutNotice isOCEnabled={ isOCEnabled } />
 				<GeneralSettingsSection
 					onSaveChanges={ onSaveChanges }
 					showLegacyExperienceTransitionNotice={

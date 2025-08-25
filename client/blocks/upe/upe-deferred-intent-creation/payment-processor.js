@@ -2,6 +2,7 @@
  * External dependencies
  */
 import { getPaymentMethods } from '@woocommerce/blocks-registry';
+import { select } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import {
 	PaymentElement,
@@ -23,6 +24,7 @@ import {
 } from 'wcstripe/stripe-utils/cash-app-limit-notice-handler';
 import { isLinkEnabled, validateBlikCode } from 'wcstripe/stripe-utils';
 import {
+	OPTIMIZED_CHECKOUT_DEFAULT_LAYOUT,
 	PAYMENT_METHOD_BLIK,
 	PAYMENT_METHOD_CASHAPP,
 } from 'wcstripe/stripe-utils/constants';
@@ -86,7 +88,9 @@ const getStripeElementOptions = () => {
 		options = {
 			...options,
 			layout: {
-				type: 'accordion',
+				type:
+					getBlocksConfiguration()?.OCLayout ||
+					OPTIMIZED_CHECKOUT_DEFAULT_LAYOUT,
 				radios: false,
 			},
 		};
@@ -192,6 +196,16 @@ const PaymentProcessor = ( {
 								'woocommerce-gateway-stripe'
 							),
 						};
+					}
+
+					const { validationStore } = window.wc?.wcBlocksData ?? {};
+					if ( validationStore ) {
+						const store = select( validationStore );
+						const hasValidationErrors = store.hasValidationErrors();
+						// Return if there is a validation error on the checkout fields.
+						if ( hasValidationErrors ) {
+							return;
+						}
 					}
 
 					// BLIK is a special case which is not handled through the Stripe element.
@@ -333,7 +347,7 @@ const PaymentProcessor = ( {
 		} else {
 			removeCashAppLimitNotice();
 		}
-		// Apply single payment element styles if the selected payment method is card and SPE is enabled.
+		// Apply single payment element styles if the selected payment method is card and OC is enabled.
 		if ( getBlocksConfiguration()?.isOCEnabled ) {
 			applyStyles();
 

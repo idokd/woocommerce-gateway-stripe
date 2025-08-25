@@ -1,6 +1,6 @@
 /* global wc_stripe_settings_params */
 import { __ } from '@wordpress/i18n';
-import { React, useContext, useState } from 'react';
+import { React, useState } from 'react';
 import { ExternalLink } from '@wordpress/components';
 import SettingsSection from '../settings-section';
 import PaymentsAndTransactionsSection from '../payments-and-transactions-section';
@@ -11,9 +11,7 @@ import { AccountKeysModal } from './account-keys-modal';
 import LoadableSettingsSection from 'wcstripe/settings/loadable-settings-section';
 import './style.scss';
 import LoadableAccountSection from 'wcstripe/settings/loadable-account-section';
-import PromotionalBannerSection from 'wcstripe/settings/payment-settings/promotional-banner-section';
-import UpeToggleContext from 'wcstripe/settings/upe-toggle/context';
-import { useAccount } from 'wcstripe/data/account';
+import PromotionalBanner from 'wcstripe/settings/payment-settings/promotional-banner';
 
 const GeneralSettingsDescription = () => (
 	<>
@@ -68,19 +66,17 @@ const PaymentsAndTransactionsDescription = () => (
 	</>
 );
 
-const PaymentSettingsPanel = () => {
+const PaymentSettingsPanel = ( {
+	showPromotionalBanner,
+	setShowPromotionalBanner,
+	promotionalBannerType,
+	isOCEnabled,
+	setIsOCEnabled,
+	setIsUpeEnabled,
+} ) => {
 	// @todo - deconstruct modalType and setModalType from useModalType custom hook
 	const [ modalType, setModalType ] = useState( '' );
 	const [ keepModalContent, setKeepModalContent ] = useState( false );
-	const [ showPromotionalBanner, setShowPromotionalBanner ] = useState(
-		true
-	);
-	const { isUpeEnabled, setIsUpeEnabled } = useContext( UpeToggleContext );
-	const { data } = useAccount();
-	const isTestModeEnabled = Boolean( data.testmode );
-	const oauthConnected = isTestModeEnabled
-		? data?.oauth_connections?.test?.connected
-		: data?.oauth_connections?.live?.connected;
 
 	const handleModalDismiss = () => {
 		setModalType( '' );
@@ -102,14 +98,13 @@ const PaymentSettingsPanel = () => {
 							numLines={ 20 }
 							keepContent={ keepModalContent }
 						>
-							<PromotionalBannerSection
+							<PromotionalBanner
 								setShowPromotionalBanner={
 									setShowPromotionalBanner
 								}
-								setPromotionalBannerType={ () => {} }
-								isUpeEnabled={ isUpeEnabled }
 								setIsUpeEnabled={ setIsUpeEnabled }
-								isConnectedViaOAuth={ oauthConnected }
+								setIsOCEnabled={ setIsOCEnabled }
+								promotionalBannerType={ promotionalBannerType }
 								oauthUrl={
 									// eslint-disable-next-line camelcase
 									wc_stripe_settings_params.stripe_oauth_url
@@ -151,7 +146,10 @@ const PaymentSettingsPanel = () => {
 					<PaymentsAndTransactionsSection />
 				</LoadableSettingsSection>
 			</SettingsSection>
-			<AdvancedSettingsSection />
+			<AdvancedSettingsSection
+				isOCEnabled={ isOCEnabled }
+				setIsOCEnabled={ setIsOCEnabled }
+			/>
 		</>
 	);
 };

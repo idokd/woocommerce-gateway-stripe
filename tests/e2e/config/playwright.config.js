@@ -81,10 +81,10 @@ const config = {
 			name: 'default',
 			testMatch: '**/*.spec.js',
 			testIgnore: [
-				'**/_legacy-experience/**',
 				'**/acss.spec.js',
 				'**/optimized-checkout.spec.js',
 				'**/blik.spec.js',
+				'**/becs.spec.js',
 			],
 			dependencies: [ 'default-setup' ],
 			use: { ...devices[ 'Desktop Chrome' ] },
@@ -101,14 +101,15 @@ const config = {
 			use: { ...devices[ 'Desktop Chrome' ] },
 		},
 		{
-			name: 'legacy-setup',
-			testMatch: '_legacy-experience/legacy.setup.js',
+			name: 'becs-setup',
+			testMatch: '/becs.setup.js',
+			teardown: 'reset account',
 			use: { ...devices[ 'Desktop Chrome' ] },
 		},
 		{
-			name: 'legacy',
-			testMatch: '/_legacy-experience/**/*.spec.js',
-			dependencies: [ 'legacy-setup' ],
+			name: 'becs',
+			testMatch: '**/becs.spec.js',
+			dependencies: [ 'becs-setup' ],
 			use: { ...devices[ 'Desktop Chrome' ] },
 		},
 		{
@@ -136,7 +137,7 @@ const config = {
 		},
 		{
 			name: 'reset account',
-			testMatch: '/blik.teardown.js',
+			testMatch: '/lpm.teardown.js',
 			use: { ...devices[ 'Desktop Chrome' ] },
 		},
 	],
