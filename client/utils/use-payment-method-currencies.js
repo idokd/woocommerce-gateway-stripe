@@ -212,10 +212,13 @@ const getKlarnaCurrencies = () => {
 		return [ 'EUR', 'SEK', 'PLN', 'CHF', 'CZK', 'DKK', 'GBP', 'NOK' ];
 	}
 
-	// Throw an error if the country is not recognized.
-	throw new Error(
-		`Unable to determine Klarna currencies for: ${ accountCountry }`
+	// eslint-disable-next-line no-console
+	console.error(
+		'Unable to determine Klarna currencies for:',
+		accountCountry
 	);
+
+	return [];
 };
 
 const getAmazonPayCurrencies = () => {
@@ -227,9 +230,15 @@ const getAmazonPayCurrencies = () => {
 	}
 };
 
-export const usePaymentMethodCurrencies = ( paymentMethodId ) => {
-	const { isUpeEnabled } = useContext( UpeToggleContext );
-
+/**
+ * Returns the currencies supported by a payment method.
+ * Note that [] is returned for payment methods that support all currencies.
+ *
+ * @param {string}  paymentMethodId
+ * @param {boolean} isUpeEnabled
+ * @return {string[]} Array of currencies supported by that payment method.
+ */
+export const getPaymentMethodCurrencies = ( paymentMethodId, isUpeEnabled ) => {
 	switch ( paymentMethodId ) {
 		case PAYMENT_METHOD_ALIPAY:
 			return getAliPayCurrencies( isUpeEnabled );
@@ -242,6 +251,19 @@ export const usePaymentMethodCurrencies = ( paymentMethodId ) => {
 		default:
 			return PaymentMethodsMap[ paymentMethodId ]?.currencies || [];
 	}
+};
+
+/**
+ * Hook to return the currencies supported by a payment method.
+ * Note that [] is returned for payment methods that support all currencies.
+ *
+ * @param {string} paymentMethodId
+ * @return {string[]} Array of currencies supported by that payment method.
+ */
+export const usePaymentMethodCurrencies = ( paymentMethodId ) => {
+	const { isUpeEnabled } = useContext( UpeToggleContext );
+
+	return getPaymentMethodCurrencies( paymentMethodId, isUpeEnabled );
 };
 
 export default usePaymentMethodCurrencies;

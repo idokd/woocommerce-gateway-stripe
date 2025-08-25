@@ -61,12 +61,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 
 		$upe_helper = new UPE_Test_Helper();
 
-		// Enable Bacs for tests.
-		update_option( WC_Stripe_Feature_Flags::LPM_BACS_FEATURE_FLAG_NAME, 'yes' );
-
-		// Enable ACH
-		update_option( WC_Stripe_Feature_Flags::LPM_ACH_FEATURE_FLAG_NAME, 'yes' );
-
 		// Enable Amazon Pay
 		update_option( WC_Stripe_Feature_Flags::AMAZON_PAY_FEATURE_FLAG_NAME, 'yes' );
 
@@ -104,8 +98,6 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 	public function tear_down() {
 		parent::tear_down();
 
-		delete_option( WC_Stripe_Feature_Flags::LPM_BACS_FEATURE_FLAG_NAME );
-		delete_option( WC_Stripe_Feature_Flags::LPM_ACH_FEATURE_FLAG_NAME );
 		delete_option( WC_Stripe_Feature_Flags::AMAZON_PAY_FEATURE_FLAG_NAME );
 	}
 
@@ -133,7 +125,7 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 		$this->mock_payment_method_configurations( [ 'card' ], [ 'amazon_pay', 'google_pay', 'apple_pay' ] );
 
 		// Set pmc_enabled to yes to prevent migration
-		$stripe_settings = WC_Stripe_Helper::get_stripe_settings();
+		$stripe_settings                = WC_Stripe_Helper::get_stripe_settings();
 		$stripe_settings['pmc_enabled'] = 'yes';
 		WC_Stripe_Helper::update_main_stripe_settings( $stripe_settings );
 
@@ -260,50 +252,8 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 		$this->assertEquals( $original_valid_value, $this->get_gateway()->get_option( $option_name ) );
 	}
 
-	public function test_individual_payment_method_settings() {
-		// Disable UPE and set up EPS gateway.
-		update_option(
-			'woocommerce_stripe_settings',
-			[
-				'enabled'     => 'yes',
-				'title'       => 'Credit card',
-				'description' => 'Pay with Credit card',
-				WC_Stripe_Feature_Flags::UPE_CHECKOUT_FEATURE_ATTRIBUTE_NAME => 'no',
-			]
-		);
-		$gateways = WC_Stripe_Helper::get_legacy_payment_methods();
-		$gateways['stripe_eps']->update_option( 'title', 'EPS' );
-		$gateways['stripe_eps']->update_option( 'description', 'Pay with EPS' );
-
-		$response                                = $this->rest_get_settings();
-		$individual_payment_method_settings_data = $response->get_data()['individual_payment_method_settings'];
-
-		$this->assertEquals( 200, $response->get_status() );
-		$this->arrayHasKey( WC_Stripe_Payment_Methods::EPS, $individual_payment_method_settings_data );
-		$this->assertEquals(
-			[
-				'name'        => 'EPS',
-				'description' => 'Pay with EPS',
-			],
-			$individual_payment_method_settings_data['eps'],
-		);
-
-		$request = new WP_REST_Request( 'POST', self::SETTINGS_ROUTE . '/payment_method' );
-		$request->set_param( 'payment_method_id', WC_Stripe_Payment_Methods::GIROPAY );
-		$request->set_param( 'is_enabled', true );
-		$request->set_param( 'title', 'Giropay' );
-		$request->set_param( 'description', 'Pay with Giropay' );
-
-		$response         = rest_do_request( $request );
-		$gateway_settings = get_option( 'woocommerce_stripe_giropay_settings' );
-
-		$this->assertEquals( 200, $response->get_status() );
-		$this->assertEquals( 'Giropay', $gateway_settings['title'] );
-		$this->assertEquals( 'Pay with Giropay', $gateway_settings['description'] );
-	}
-
 	public function test_get_settings_returns_available_payment_method_ids() {
-		$expected_method_ids  = [
+		$expected_method_ids = [
 			WC_Stripe_Payment_Methods::CARD,
 			WC_Stripe_Payment_Methods::ACH,
 			WC_Stripe_Payment_Methods::ALIPAY,
@@ -418,15 +368,124 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 		remove_filter( 'user_has_cap', $cb );
 	}
 
-	public function test_dismiss_customization_notice() {
-		$request = new WP_REST_Request( 'POST', self::SETTINGS_ROUTE . '/notice' );
-		$request->set_param( 'wc_stripe_show_customization_notice', 'no' );
+	/**
+	 * Tests that Apple Pay and Google Pay can be enabled in the PMC
+	 * when payment request is enabled, and card is enabled.
+	 */
+	public function test_update_settings_enables_apple_pay_google_pay() {
+		// Before the update: card and CashApp are enabled, Apple Pay and Google Pay are disabled
+		$this->mock_payment_method_configurations(
+			[ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::CASHAPP_PAY ],
+			[ WC_Stripe_Payment_Methods::APPLE_PAY, WC_Stripe_Payment_Methods::GOOGLE_PAY ]
+		);
 
-		$response      = rest_do_request( $request );
-		$notice_option = get_option( 'wc_stripe_show_customization_notice' );
+		// After the update: card, Apple Pay, and Google Pay are enabled, CashApp is disabled
+		$this->expect_payment_method_configurations_update(
+			[ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::APPLE_PAY, WC_Stripe_Payment_Methods::GOOGLE_PAY ],
+			[ WC_Stripe_Payment_Methods::CASHAPP_PAY ]
+		);
+		$request = new WP_REST_Request( 'POST', self::SETTINGS_ROUTE );
+		// Disable CashApp, keep card enabled.
+		$request->set_param( 'enabled_payment_method_ids', [ WC_Stripe_Payment_Methods::CARD ] );
+		$request->set_param( 'is_upe_enabled', true );
+		// Enable Apple Pay and Google Pay.
+		$request->set_param( 'is_payment_request_enabled', true );
+
+		$response = $this->controller->update_settings( $request );
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * Tests that Apple Pay and Google Pay can only be enabled in the PMC
+	 * when payment request is enabled, and card is enabled.
+	 */
+	public function test_update_settings_enforces_apple_pay_google_pay_requires_card() {
+		// Before the update: card, Apple Pay, and Google Pay are enabled, CashApp is disabled
+		$this->mock_payment_method_configurations(
+			[ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::APPLE_PAY, WC_Stripe_Payment_Methods::GOOGLE_PAY ],
+			[ WC_Stripe_Payment_Methods::CASHAPP_PAY ]
+		);
+
+		// After the update: CashApp is enabled, card, Apple Pay, and Google Pay are disabled
+		$this->expect_payment_method_configurations_update(
+			[ WC_Stripe_Payment_Methods::CASHAPP_PAY ],
+			[ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::APPLE_PAY, WC_Stripe_Payment_Methods::GOOGLE_PAY ]
+		);
+
+		$request = new WP_REST_Request( 'POST', self::SETTINGS_ROUTE );
+		// Disable card, enable CashApp.
+		$request->set_param( 'enabled_payment_method_ids', [ WC_Stripe_Payment_Methods::CASHAPP_PAY ] );
+		$request->set_param( 'is_upe_enabled', true );
+		// Enable Apple Pay and Google Pay -- this will be ignored because card is disabled
+		$request->set_param( 'is_payment_request_enabled', true );
+
+		$response = $this->controller->update_settings( $request );
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * Tests for the dismiss notice endpoint.
+	 *
+	 * @param array $request_params The request parameters.
+	 * @param array $expected_option The expected option after the request.
+	 * @param array $expected_response The expected response.
+	 * @return void
+	 *
+	 * @dataProvider provide_test_dismiss_notice
+	 */
+	public function test_dismiss_notice( $request_params, $expected_option, $expected_response ) {
+		$request = new WP_REST_Request( 'POST', self::SETTINGS_ROUTE . '/notice' );
+		foreach ( $request_params as $key => $value ) {
+			$request->set_param( $key, $value );
+		}
+
+		$response = rest_do_request( $request );
+		if ( count( $expected_option ) > 0 ) {
+			foreach ( $expected_option as $option_name => $option_value ) {
+				$notice_option = get_option( $option_name );
+				$this->assertEquals( $option_value, $notice_option );
+			}
+		}
 
 		$this->assertEquals( 200, $response->get_status() );
-		$this->assertEquals( 'no', $notice_option );
+		$this->assertEquals( $expected_response, $response->get_data() );
+	}
+
+	/**
+	 * Provider for test_dismiss_notice.
+	 *
+	 * @return array
+	 */
+	public function provide_test_dismiss_notice() {
+		return [
+			'empty request'                => [
+				'request params'    => [],
+				'expected option'   => [],
+				'expected response' => [],
+			],
+			'dismiss customization notice' => [
+				'request params'    => [
+					'wc_stripe_show_customization_notice' => 'no',
+				],
+				'expected option'   => [
+					'wc_stripe_show_customization_notice' => 'no',
+				],
+				'expected response' => [
+					'result' => 'notice dismissed',
+				],
+			],
+			'dismiss BNPL banner'          => [
+				'request params'    => [
+					'wc_stripe_show_bnpl_promotion_banner' => 'no',
+				],
+				'expected option'   => [
+					'wc_stripe_show_bnpl_promotion_banner' => 'no',
+				],
+				'expected response' => [
+					'result' => 'notice dismissed',
+				],
+			],
+		];
 	}
 
 	/**
@@ -524,6 +583,14 @@ class WC_REST_Stripe_Settings_Controller_Test extends WC_Mock_Stripe_API_Unit_Te
 				[ 'cart' ],
 				[ 'cart', 'checkout', 'product' ],
 				[ 'foo' ],
+			],
+			'optimized_checkout_layout' => [
+				'oc_layout',
+				'optimized_checkout_layout',
+				'accordion',
+				'tabs',
+				'foo',
+				true, // is_upe_enabled
 			],
 		];
 	}

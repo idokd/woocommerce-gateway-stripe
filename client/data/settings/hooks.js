@@ -9,14 +9,11 @@ const makeReadOnlySettingsHook = (
 	fieldName,
 	fieldDefaultValue = false
 ) => () =>
-	useSelect(
-		( select ) => {
-			const { getSettings } = select( STORE_NAME );
+	useSelect( ( select ) => {
+		const { getSettings } = select( STORE_NAME );
 
-			return getSettings()[ fieldName ] || fieldDefaultValue;
-		},
-		[ fieldName, fieldDefaultValue ]
-	);
+		return getSettings()[ fieldName ] || fieldDefaultValue;
+	}, [] );
 
 const makeSettingsHook = ( fieldName, fieldDefaultValue = false ) => () => {
 	const { updateSettingsValues } = useDispatch( STORE_NAME );
@@ -93,47 +90,6 @@ export const useGetOrderedPaymentMethodIds = () => {
 	};
 };
 
-export const useCustomizePaymentMethodSettings = () => {
-	const {
-		saveIndividualPaymentMethodSettings,
-		updateSettingsValues,
-	} = useDispatch( STORE_NAME );
-
-	const individualPaymentMethodSettings = useSelect( ( select ) => {
-		const { getIndividualPaymentMethodSettings } = select( STORE_NAME );
-
-		return getIndividualPaymentMethodSettings();
-	}, [] );
-
-	const isCustomizing = useSelect( ( select ) => {
-		const { isCustomizingPaymentMethod } = select( STORE_NAME );
-
-		return isCustomizingPaymentMethod();
-	}, [] );
-
-	const customizePaymentMethod = useCallback(
-		async ( method, isEnabled, data ) => {
-			updateSettingsValues( {
-				individual_payment_method_settings: data,
-			} );
-			await saveIndividualPaymentMethodSettings( {
-				isEnabled,
-				method,
-				name: data[ method ].name,
-				description: data[ method ].description,
-				expiration: data[ method ].expiration,
-			} );
-		},
-		[ saveIndividualPaymentMethodSettings, updateSettingsValues ]
-	);
-
-	return {
-		individualPaymentMethodSettings,
-		isCustomizing,
-		customizePaymentMethod,
-	};
-};
-
 export const useEnabledPaymentMethodIds = makeSettingsHook(
 	'enabled_payment_method_ids',
 	EMPTY_ARR
@@ -207,7 +163,11 @@ export const useIsShortAccountStatementEnabled = makeSettingsHook(
 export const useDebugLog = makeSettingsHook( 'is_debug_log_enabled' );
 export const useIsUpeEnabled = makeSettingsHook( 'is_upe_enabled' );
 export const useIsOCEnabled = makeSettingsHook( 'is_oc_enabled' );
-export const useOCTitle = makeSettingsHook( 'oc_title', 'Stripe' );
+export const useOCLayout = makeSettingsHook( 'oc_layout' );
+export const useIsPMCEnabled = makeReadOnlySettingsHook(
+	'is_pmc_enabled',
+	false
+);
 
 export const useIndividualPaymentMethodSettings = makeSettingsHook(
 	'individual_payment_method_settings',

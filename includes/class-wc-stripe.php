@@ -115,11 +115,11 @@ class WC_Stripe {
 		if ( is_admin() ) {
 			require_once WC_STRIPE_PLUGIN_PATH . '/includes/admin/class-wc-stripe-privacy.php';
 		}
+
 		if ( file_exists( WC_STRIPE_PLUGIN_PATH . '/includes/class-wc-stripe-feature-flags.php' ) ) {
 			require_once WC_STRIPE_PLUGIN_PATH . '/includes/class-wc-stripe-feature-flags.php';
 		}
 
-		require_once WC_STRIPE_PLUGIN_PATH . '/includes/class-wc-stripe-order.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/class-wc-stripe-upe-compatibility.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/class-wc-stripe-co-branded-cc-compatibility.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/class-wc-stripe-exception.php';
@@ -197,6 +197,7 @@ class WC_Stripe {
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/payment-methods/class-wc-stripe-express-checkout-element.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/payment-methods/class-wc-stripe-express-checkout-helper.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php';
+		require_once WC_STRIPE_PLUGIN_PATH . '/includes/payment-methods/class-wc-stripe-express-checkout-custom-fields.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/compat/class-wc-stripe-woo-compat-utils.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/connect/class-wc-stripe-connect.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/connect/class-wc-stripe-connect-api.php';
@@ -243,6 +244,11 @@ class WC_Stripe {
 				require_once WC_STRIPE_PLUGIN_PATH . '/includes/admin/class-wc-stripe-payment-gateways-controller.php';
 				new WC_Stripe_Payment_Gateways_Controller();
 			}
+
+			if ( WC_Stripe_Subscriptions_Helper::is_subscriptions_enabled() ) {
+				require_once WC_STRIPE_PLUGIN_PATH . '/includes/admin/class-wc-stripe-subscription-detached-bulk-action.php';
+				new WC_Stripe_Subscription_Detached_Bulk_Action();
+			}
 		}
 
 		// REMOVE IN THE FUTURE.
@@ -250,7 +256,7 @@ class WC_Stripe {
 
 		add_filter( 'woocommerce_payment_gateways', [ $this, 'add_gateways' ] );
 		add_filter( 'pre_update_option_woocommerce_stripe_settings', [ $this, 'gateway_settings_update' ], 10, 2 );
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'plugin_action_links' ] );
+		add_filter( 'plugin_action_links_' . plugin_basename( WC_STRIPE_MAIN_FILE ), [ $this, 'plugin_action_links' ] );
 		add_filter( 'plugin_row_meta', [ $this, 'plugin_row_meta' ], 10, 2 );
 
 		// Update the email field position.
@@ -273,6 +279,20 @@ class WC_Stripe {
 
 		// Initialize the class for handling the status page.
 		add_action( 'init', [ $this, 'initialize_status_page' ], 15 );
+
+		add_action( 'init', [ $this, 'initialize_apple_pay_registration' ] );
+
+		// Check for payment methods that should be toggled, e.g. unreleased,
+		// BNPLs when official plugins are active,
+		// cards when the Optimized Checkout is enabled, etc.
+		add_action( 'init', [ $this, 'maybe_toggle_payment_methods' ] );
+	}
+
+	/**
+	 * Initialize the class for handling the Apple Pay registration.
+	 */
+	public function initialize_apple_pay_registration() {
+		new WC_Stripe_Apple_Pay_Registration();
 	}
 
 	/**
@@ -304,7 +324,7 @@ class WC_Stripe {
 	 * @version 3.1.0
 	 */
 	public function install() {
-		if ( ! is_plugin_active( plugin_basename( __FILE__ ) ) ) {
+		if ( ! is_plugin_active( plugin_basename( WC_STRIPE_MAIN_FILE ) ) ) {
 			return;
 		}
 
@@ -327,6 +347,9 @@ class WC_Stripe {
 			// - @reykjalin
 			$this->update_prb_location_settings();
 
+			// Migrate to the new checkout experience.
+			$this->migrate_to_new_checkout_experience();
+
 			// Check for subscriptions using legacy SEPA tokens on upgrade.
 			// Handled by WC_Stripe_Subscriptions_Legacy_SEPA_Token_Update.
 			delete_option( 'woocommerce_stripe_subscriptions_legacy_sepa_tokens_updated' );
@@ -334,6 +357,25 @@ class WC_Stripe {
 			// TODO: Remove this call when all the merchants have moved to the new checkout experience.
 			// We are calling this function here to make sure that the Stripe methods are added to the `woocommerce_gateway_order` option.
 			WC_Stripe_Helper::add_stripe_methods_in_woocommerce_gateway_order();
+		}
+	}
+
+	/**
+	 * Migrates to the new checkout experience.
+	 *
+	 * @since 9.6.0
+	 * @version 9.6.0
+	 */
+	public function migrate_to_new_checkout_experience() {
+		$stripe_settings = WC_Stripe_Helper::get_stripe_settings();
+		// If the flag is not set or not set to yes (set to no/disabled), it means the site was using the legacy checkout experience.
+		if ( empty( $stripe_settings[ WC_Stripe_Feature_Flags::UPE_CHECKOUT_FEATURE_ATTRIBUTE_NAME ] ) || 'yes' !== $stripe_settings[ WC_Stripe_Feature_Flags::UPE_CHECKOUT_FEATURE_ATTRIBUTE_NAME ] ) {
+			$stripe_settings[ WC_Stripe_Feature_Flags::UPE_CHECKOUT_FEATURE_ATTRIBUTE_NAME ] = 'yes';
+			WC_Stripe_Helper::update_main_stripe_settings( $stripe_settings );
+
+			if ( class_exists( 'WC_Tracks' ) ) {
+				WC_Tracks::record_event( 'wcstripe_migrated_to_new_checkout_experience' );
+			}
 		}
 	}
 
@@ -400,10 +442,10 @@ class WC_Stripe {
 	 * @return array  $links Update list of plugin links.
 	 */
 	public function plugin_row_meta( $links, $file ) {
-		if ( plugin_basename( __FILE__ ) === $file ) {
+		if ( plugin_basename( WC_STRIPE_MAIN_FILE ) === $file ) {
 			$row_meta = [
-				'docs'    => '<a href="' . esc_url( apply_filters( 'woocommerce_gateway_stripe_docs_url', 'https://woocommerce.com/document/stripe/' ) ) . '" title="' . esc_attr( __( 'View Documentation', 'woocommerce-gateway-stripe' ) ) . '">' . __( 'Docs', 'woocommerce-gateway-stripe' ) . '</a>',
-				'support' => '<a href="' . esc_url( apply_filters( 'woocommerce_gateway_stripe_support_url', 'https://woocommerce.com/my-account/create-a-ticket?select=18627' ) ) . '" title="' . esc_attr( __( 'Open a support request at WooCommerce.com', 'woocommerce-gateway-stripe' ) ) . '">' . __( 'Support', 'woocommerce-gateway-stripe' ) . '</a>',
+				'docs'    => '<a href="' . esc_url( 'https://woocommerce.com/document/stripe/' ) . '" title="' . esc_attr( __( 'View Documentation', 'woocommerce-gateway-stripe' ) ) . '">' . __( 'Docs', 'woocommerce-gateway-stripe' ) . '</a>',
+				'support' => '<a href="' . esc_url( 'https://woocommerce.com/my-account/create-a-ticket?select=18627' ) . '" title="' . esc_attr( __( 'Open a support request at WooCommerce.com', 'woocommerce-gateway-stripe' ) ) . '">' . __( 'Support', 'woocommerce-gateway-stripe' ) . '</a>',
 			];
 			return array_merge( $links, $row_meta );
 		}
@@ -678,11 +720,16 @@ class WC_Stripe {
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/compat/class-wc-stripe-email-failed-renewal-authentication.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/compat/class-wc-stripe-email-failed-preorder-authentication.php';
 		require_once WC_STRIPE_PLUGIN_PATH . '/includes/compat/class-wc-stripe-email-failed-authentication-retry.php';
+		require_once WC_STRIPE_PLUGIN_PATH . '/includes/compat/class-wc-stripe-email-failed-refund.php';
+		require_once WC_STRIPE_PLUGIN_PATH . '/includes/compat/class-wc-stripe-email-admin-failed-refund.php';
+		require_once WC_STRIPE_PLUGIN_PATH . '/includes/compat/class-wc-stripe-email-customer-failed-refund.php';
 
 		// Add all emails, generated by the gateway.
 		$email_classes['WC_Stripe_Email_Failed_Renewal_Authentication']  = new WC_Stripe_Email_Failed_Renewal_Authentication( $email_classes );
 		$email_classes['WC_Stripe_Email_Failed_Preorder_Authentication'] = new WC_Stripe_Email_Failed_Preorder_Authentication( $email_classes );
-		$email_classes['WC_Stripe_Email_Failed_Authentication_Retry']    = new WC_Stripe_Email_Failed_Authentication_Retry( $email_classes );
+		$email_classes['WC_Stripe_Email_Failed_Authentication_Retry']    = new WC_Stripe_Email_Failed_Authentication_Retry();
+		$email_classes['WC_Stripe_Email_Admin_Failed_Refund']            = new WC_Stripe_Email_Admin_Failed_Refund();
+		$email_classes['WC_Stripe_Email_Customer_Failed_Refund']         = new WC_Stripe_Email_Customer_Failed_Refund();
 
 		return $email_classes;
 	}
@@ -724,6 +771,7 @@ class WC_Stripe {
 			require_once WC_STRIPE_PLUGIN_PATH . '/includes/admin/class-wc-rest-stripe-settings-controller.php';
 			require_once WC_STRIPE_PLUGIN_PATH . '/includes/admin/class-wc-stripe-rest-upe-flag-toggle-controller.php';
 			require_once WC_STRIPE_PLUGIN_PATH . '/includes/admin/class-wc-rest-stripe-account-keys-controller.php';
+			require_once WC_STRIPE_PLUGIN_PATH . '/includes/admin/class-wc-stripe-rest-oc-setting-toggle-controller.php';
 
 			$upe_flag_toggle_controller = new WC_Stripe_REST_UPE_Flag_Toggle_Controller();
 			$upe_flag_toggle_controller->register_routes();
@@ -733,6 +781,9 @@ class WC_Stripe {
 
 			$stripe_account_keys_controller = new WC_REST_Stripe_Account_Keys_Controller( $this->account );
 			$stripe_account_keys_controller->register_routes();
+
+			$oc_setting_toggle_controller = new WC_Stripe_REST_OC_Setting_Toggle_Controller( $this->get_main_stripe_gateway() );
+			$oc_setting_toggle_controller->register_routes();
 		}
 	}
 
@@ -810,5 +861,89 @@ class WC_Stripe {
 
 		$wcstripe_status = new WC_Stripe_Status( self::get_main_stripe_gateway(), $this->account );
 		$wcstripe_status->init_hooks();
+	}
+
+	/**
+	 * Toggle payment methods that should be enabled/disabled, e.g. unreleased,
+	 * BNPLs when other official plugins are active, etc.
+	 *
+	 * @return void
+	 */
+	public function maybe_toggle_payment_methods() {
+		$gateway = $this->get_main_stripe_gateway();
+		if ( ! is_a( $gateway, 'WC_Stripe_UPE_Payment_Gateway' ) ) {
+			return;
+		}
+
+		$payment_method_ids_to_disable = [];
+		$enabled_payment_methods       = $gateway->get_upe_enabled_payment_method_ids();
+
+		// Check for BNPLs that should be deactivated.
+		$payment_method_ids_to_disable = array_merge(
+			$payment_method_ids_to_disable,
+			$this->maybe_deactivate_bnpls( $enabled_payment_methods )
+		);
+
+		// Check if Amazon Pay should be deactivated.
+		$payment_method_ids_to_disable = array_merge(
+			$payment_method_ids_to_disable,
+			$this->maybe_deactivate_amazon_pay( $enabled_payment_methods )
+		);
+
+		if ( [] === $payment_method_ids_to_disable ) {
+			return;
+		}
+
+		$gateway->update_enabled_payment_methods(
+			array_diff( $enabled_payment_methods, $payment_method_ids_to_disable )
+		);
+	}
+
+	/**
+	 * Deactivate Affirm or Klarna payment methods if other official plugins are active.
+	 *
+	 * @param array $enabled_payment_methods The enabled payment methods.
+	 * @return array The payment method IDs to disable.
+	 */
+	private function maybe_deactivate_bnpls( $enabled_payment_methods ) {
+		$has_affirm_plugin_active = WC_Stripe_Helper::has_gateway_plugin_active( WC_Stripe_Helper::OFFICIAL_PLUGIN_ID_AFFIRM );
+		$has_klarna_plugin_active = WC_Stripe_Helper::has_gateway_plugin_active( WC_Stripe_Helper::OFFICIAL_PLUGIN_ID_KLARNA );
+		if ( ! $has_affirm_plugin_active && ! $has_klarna_plugin_active ) {
+			return [];
+		}
+
+		$payment_method_ids_to_disable = [];
+		if ( $has_affirm_plugin_active && in_array( WC_Stripe_Payment_Methods::AFFIRM, $enabled_payment_methods, true ) ) {
+			$payment_method_ids_to_disable[] = WC_Stripe_Payment_Methods::AFFIRM;
+		}
+		if ( $has_klarna_plugin_active && in_array( WC_Stripe_Payment_Methods::KLARNA, $enabled_payment_methods, true ) ) {
+			$payment_method_ids_to_disable[] = WC_Stripe_Payment_Methods::KLARNA;
+		}
+
+		return $payment_method_ids_to_disable;
+	}
+
+	/**
+	 * Deactivate Amazon Pay if it's not available, i.e. unreleased.
+	 *
+	 * TODO: Remove this method once Amazon Pay is released.
+	 *
+	 * @param array $enabled_payment_methods The enabled payment methods.
+	 * @return array Amazon Pay payment method ID, if it should be disabled.
+	 */
+	private function maybe_deactivate_amazon_pay( $enabled_payment_methods ) {
+		// Safety guard only. Ideally, we will remove this method once Amazon Pay is released.
+		if ( WC_Stripe_Feature_Flags::is_amazon_pay_available() ) {
+			// Nothing to do if Amazon Pay is already released.
+			return [];
+		}
+
+		if ( ! in_array( WC_Stripe_Payment_Methods::AMAZON_PAY, $enabled_payment_methods, true ) ) {
+			// Nothing to do if Amazon Pay is not enabled.
+			return [];
+		}
+
+		// Disable Amazon Pay.
+		return [ WC_Stripe_Payment_Methods::AMAZON_PAY ];
 	}
 }

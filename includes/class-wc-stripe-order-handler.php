@@ -219,7 +219,13 @@ class WC_Stripe_Order_Handler extends WC_Stripe_Payment_Gateway {
 				return;
 			}
 
-			do_action( 'wc_gateway_stripe_process_redirect_payment', $response, $order );
+			do_action_deprecated(
+				'wc_gateway_stripe_process_redirect_payment',
+				[ $response, $order ],
+				'9.7.0',
+				'wc_gateway_stripe_process_payment_charge',
+				'The wc_gateway_stripe_process_redirect_payment action is deprecated. Use wc_gateway_stripe_process_payment_charge instead.'
+			);
 
 			$this->process_response( $response, $order );
 
@@ -465,7 +471,7 @@ class WC_Stripe_Order_Handler extends WC_Stripe_Payment_Gateway {
 		}
 
 		// Bail if payment method is not stripe or `stripe_{apm_method}` or doesn't have an intent yet.
-		if ( substr( (string) $order->get_payment_method(), 0, 6 ) !== 'stripe' || ! $this->get_intent_from_order( $order ) ) {
+		if ( ! WC_Stripe_Helper::is_stripe_gateway_order( $order ) || ! $this->get_intent_from_order( $order ) ) {
 			return $cancel_order;
 		}
 
