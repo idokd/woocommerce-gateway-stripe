@@ -6,7 +6,6 @@ use Automattic\WooCommerce\Enums\OrderStatus;
 use Exception;
 use WooCommerce\Stripe\Tests\Helpers\OC_Test_Helper;
 use WC_Stripe_Database_Cache;
-use WC_Stripe_Payment_Method_Configurations;
 use WooCommerce\Stripe\Tests\Helpers\PMC_Test_Helper;
 use WooCommerce\Stripe\Tests\Helpers\UPE_Test_Helper;
 use WC_Data_Exception;
@@ -294,14 +293,17 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 		$amount       = WC_Stripe_Helper::get_stripe_amount( $total, $currency );
 		$description  = "Test Blog - Order $order_number";
 		$metadata     = [
-			'customer_name'  => 'Jeroen Sormani',
-			'customer_email' => 'admin@example.org',
-			'site_url'       => 'http://example.org',
-			'order_id'       => $order_number,
-			'order_key'      => $order_key,
-			'payment_type'   => 'single',
-			'signature'      => sprintf( '%d:%s', $order->get_id(), md5( implode( '-', [ absint( $order->get_id() ), $order->get_order_key(), $order->get_customer_id(), $amount ] ) ) ),
-			'tax_amount'     => WC_Stripe_Helper::get_stripe_amount( $total_tax, strtolower( $currency ) ),
+			'customer_name'              => 'Jeroen Sormani',
+			'customer_email'             => 'admin@example.org',
+			'site_url'                   => 'http://example.org',
+			'order_id'                   => $order_number,
+			'order_key'                  => $order_key,
+			'payment_type'               => 'single',
+			'signature'                  => sprintf( '%d:%s', $order->get_id(), md5( implode( '-', [ absint( $order->get_id() ), $order->get_order_key(), $order->get_customer_id(), $amount ] ) ) ),
+			'tax_amount'                 => WC_Stripe_Helper::get_stripe_amount( $total_tax, strtolower( $currency ) ),
+			'is_legacy_checkout_enabled' => 'no',
+			'is_oc_enabled'              => 'no',
+			'pmc_enabled'                => 'no',
 		];
 		return [ $amount, $description, $metadata, strtolower( $currency ) ];
 	}
@@ -313,15 +315,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 		$this->mock_payment_method_configurations( $available_payment_methods );
 		$this->set_stripe_account_data( [ 'country' => $country ] ); // TODO: Verify if the country is actually changing in the gateway.
 		$this->assertSame( $available_payment_methods, $this->mock_gateway->get_upe_available_payment_methods(), "Available payment methods are not the same for $country" );
-	}
-
-	public function test_get_upe_enabled_at_checkout_payment_method_ids() {
-		$available_payment_methods = [
-			WC_Stripe_UPE_Payment_Method_CC::STRIPE_ID,
-			WC_Stripe_UPE_Payment_Method_Link::STRIPE_ID,
-		];
-		$this->mock_payment_method_configurations( $available_payment_methods );
-		$this->assertSame( $available_payment_methods, $this->mock_gateway->get_upe_enabled_at_checkout_payment_method_ids() );
 	}
 
 	public function get_upe_available_payment_methods_provider() {
@@ -384,6 +377,61 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					WC_Stripe_UPE_Payment_Method_Multibanco::STRIPE_ID,
 					WC_Stripe_UPE_Payment_Method_Link::STRIPE_ID,
 					WC_Stripe_UPE_Payment_Method_ACSS::STRIPE_ID,
+				],
+			],
+		];
+	}
+
+	/**
+	 * Tests for `get_upe_enabled_at_checkout_payment_method_ids`.
+	 *
+	 * @param array $available_methods The available payment methods.
+	 * @param bool $oc_enabled Whether the OC feature is enabled.
+	 * @param array $expected The expected payment method IDs.
+	 * @return void
+	 *
+	 * @dataProvider provide_test_get_upe_enabled_at_checkout_payment_method_ids
+	 */
+	public function test_get_upe_enabled_at_checkout_payment_method_ids( $available_methods, $oc_enabled, $expected ) {
+		$this->mock_gateway->oc_enabled = $oc_enabled;
+
+		$this->mock_payment_method_configurations( $available_methods );
+
+		$actual = $this->mock_gateway->get_upe_enabled_at_checkout_payment_method_ids();
+
+		// Clean up.
+		$this->mock_gateway->oc_enabled = false;
+
+		$this->assertSame( $expected, $actual );
+	}
+
+	/**
+	 * Data provider for `test_get_upe_enabled_at_checkout_payment_method_ids`.
+	 *
+	 * @return array[]
+	 */
+	public function provide_test_get_upe_enabled_at_checkout_payment_method_ids() {
+		return [
+			'Default'    => [
+				'available methods' => [
+					WC_Stripe_UPE_Payment_Method_CC::STRIPE_ID,
+					WC_Stripe_UPE_Payment_Method_Link::STRIPE_ID,
+				],
+				'OC enabled' => false,
+				'expected' => [
+					WC_Stripe_UPE_Payment_Method_CC::STRIPE_ID,
+					WC_Stripe_UPE_Payment_Method_Link::STRIPE_ID,
+				],
+			],
+			'OC enabled' => [
+				'available methods (ignored)' => [
+					WC_Stripe_UPE_Payment_Method_CC::STRIPE_ID,
+					WC_Stripe_UPE_Payment_Method_Link::STRIPE_ID,
+				],
+				'OC enabled' => true,
+				'expected' => [
+					WC_Stripe_UPE_Payment_Method_CC::STRIPE_ID,
+					WC_Stripe_UPE_Payment_Method_Link::STRIPE_ID,
 				],
 			],
 		];
@@ -3038,5 +3086,76 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	public function test_get_payment_method_instance() {
 		$actual = $this->mock_gateway->get_payment_method_instance( WC_Stripe_Payment_Methods::CARD );
 		$this->assertInstanceOf( WC_Stripe_UPE_Payment_Method_CC::class, $actual );
+	}
+
+	/**
+	 * Data provider for {@see test_add_bnpl_debug_metadata()}.
+	 */
+	public function provide_test_add_bnpl_debug_metadata(): array {
+		return [
+			'All disabled' => [
+				'upe_enabled' => false,
+				'oc_enabled'  => false,
+				'pmc_enabled' => false,
+			],
+			'All disabled with null pmc_enabled' => [
+				'upe_enabled' => false,
+				'oc_enabled'  => false,
+				'pmc_enabled' => null,
+			],
+			'All enabled' => [
+				'upe_enabled' => true,
+				'oc_enabled'  => true,
+				'pmc_enabled' => true,
+			],
+		];
+	}
+
+	/**
+	 * Test for `add_bnpl_debug_metadata`.
+	 *
+	 * @dataProvider provide_test_add_bnpl_debug_metadata
+	 * @param bool $upe_enabled Whether the UPE feature flag is enabled.
+	 * @param bool $oc_enabled Whether the OC feature is enabled.
+	 * @param bool|null $pmc_enabled Whether the PMC feature is enabled, disabled, or not specified.
+	 * @return void
+	 */
+	public function test_add_bnpl_debug_metadata( bool $upe_enabled, bool $oc_enabled, ?bool $pmc_enabled = null ) {
+		$init_oc_enabled  = $this->mock_gateway->oc_enabled;
+		$init_pmc_enabled = $this->mock_gateway->settings['pmc_enabled'] ?? null;
+
+		$this->mock_gateway->oc_enabled = $oc_enabled;
+		if ( null === $pmc_enabled ) {
+			unset( $this->mock_gateway->settings['pmc_enabled'] );
+		} else {
+			$this->mock_gateway->settings['pmc_enabled'] = $pmc_enabled;
+		}
+
+		$mock_upe_enabled = $upe_enabled ? '__return_true' : '__return_false';
+		add_filter( 'wc_stripe_is_upe_checkout_enabled', $mock_upe_enabled, 999 );
+
+		$order = WC_Helper_Order::create_order();
+
+		$result = apply_filters( 'wc_stripe_intent_metadata', [], $order );
+
+		// Reset all variables and filters.
+		remove_filter( 'wc_stripe_is_upe_checkout_enabled', $mock_upe_enabled, 999 );
+		$this->mock_gateway->oc_enabled = $init_oc_enabled;
+		if ( null === $init_pmc_enabled ) {
+			unset( $this->mock_gateway->settings['pmc_enabled'] );
+		} else {
+			$this->mock_gateway->settings['pmc_enabled'] = $init_pmc_enabled ? 'yes' : 'no';
+		}
+
+		$this->assertArrayHasKey( 'is_legacy_checkout_enabled', $result );
+		$this->assertEquals( $upe_enabled ? 'no' : 'yes', $result['is_legacy_checkout_enabled'] );
+		$this->assertArrayHasKey( 'is_oc_enabled', $result );
+		$this->assertEquals( $oc_enabled ? 'yes' : 'no', $result['is_oc_enabled'] );
+		$this->assertArrayHasKey( 'pmc_enabled', $result );
+		if ( null === $pmc_enabled ) {
+			$this->assertEquals( 'null', $result['pmc_enabled'] );
+		} else {
+			$this->assertEquals( $pmc_enabled ? 'yes' : 'no', $result['pmc_enabled'] );
+		}
 	}
 }
