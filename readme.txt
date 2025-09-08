@@ -110,7 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.9.0 - xxxx-xx-xx =
+= 9.9.0 - 2025-09-08 =
 
 **New Features**
 
