@@ -112,6 +112,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 9.9.1 - xxxx-xx-xx =
 * Fix - Fatal error caused by type mismatch when processing webhooks
+* Update - Reduces the minimum transaction amount for Affirm to 35 USD
 
 = 9.9.0 - 2025-09-08 =
 
