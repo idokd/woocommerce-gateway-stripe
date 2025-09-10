@@ -110,6 +110,9 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 9.9.1 - xxxx-xx-xx =
+* Fix - Fatal error caused by type mismatch when processing webhooks
+
 = 9.9.0 - 2025-09-08 =
 
 **New Features**
