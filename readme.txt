@@ -116,6 +116,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Update - Reduces the minimum transaction amount for Affirm to 35 USD
 * Fix - Fatal error caused by type mismatch when processing webhooks
 * Fix - Avoid instantiating WC_Payment_Gateways too early when checking for Klarna and Affirm plugins
+* Fix - Validate order when verifying payment intent
 * Fix - Fix subscription renewal error caused by passing both mandate ID and mandate data
 
 = 9.9.0 - 2025-09-08 =
