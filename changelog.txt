@@ -8,6 +8,8 @@
 * Fix - Avoid instantiating WC_Payment_Gateways too early when checking for Klarna and Affirm plugins
 * Fix - Fix subscription renewal error caused by passing both mandate ID and mandate data
 * Fix - Prevent type collisions for saved payment methods
+* Fix - Validate order when verifying payment intent
+* Dev - Renaming the Klarna payment token class to WC_Stripe_Klarna_Payment_Token
 
 = 9.9.0 - 2025-09-08 =
 * Dev - Adds PMC setting information to the Payment Intent object metadata
