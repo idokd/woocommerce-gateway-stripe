@@ -110,7 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.9.1 - xxxx-xx-xx =
+= 9.9.1 - 2025-09-16 =
 * Add - Allow Klarna to be used for recurring payments and subscriptions
 * Add - Adds support for the Romanian Leu (RON) currency when paying with Klarna
 * Update - Reduces the minimum transaction amount for Affirm to 35 USD
