@@ -111,6 +111,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 9.10.0 - xxxx-xx-xx =
+* Add - Allow the purchase of free trials using the Express Payment methods when the product does not require shipping
 * Update - Changes the documentation page URL for the Optimized Checkout feature to https://woocommerce.com/document/stripe/admin-experience/optimized-checkout-suite/
 * Update - Changes the background color and spacing for the Woo logo shown in the account modal
 * Add - Allow Klarna to be used for recurring payments and subscriptions
