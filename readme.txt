@@ -110,6 +110,9 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 9.9.2 - xxxx-xx-xx =
+* Update - Allow more situations to enable settings synchronization with Stripe
+
 = 9.9.1 - 2025-09-16 =
 * Add - Allow Klarna to be used for recurring payments and subscriptions
 * Add - Adds support for the Romanian Leu (RON) currency when paying with Klarna
