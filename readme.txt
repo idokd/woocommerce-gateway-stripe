@@ -110,6 +110,11 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 9.9.2 - xxxx-xx-xx =
+* Fix - BACS instruction text appears twice on the Order Confirmation page
+* Update - Allow more situations to enable settings synchronization with Stripe
+* Update - Ensure that we check for settings sync eligibility after every upgrade
+
 = 9.9.1 - 2025-09-16 =
 * Add - Allow Klarna to be used for recurring payments and subscriptions
 * Add - Adds support for the Romanian Leu (RON) currency when paying with Klarna
