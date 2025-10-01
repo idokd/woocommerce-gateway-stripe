@@ -137,5 +137,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - BACS instruction text appears twice on the Order Confirmation page
 * Update - Allow more situations to enable settings synchronization with Stripe
 * Update - Ensure that we check for settings sync eligibility after every upgrade
+* Update - Reduce settings Javascript file size by using smaller image
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
