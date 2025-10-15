@@ -110,6 +110,9 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 10.0.1 - xxxx-xx-xx =
+* Fix - Remove persistent reconnection notices
+
 = 10.0.0 - 2025-10-14 =
 
 **New Features**
