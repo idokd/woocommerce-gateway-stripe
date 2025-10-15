@@ -4,7 +4,7 @@ Tags: credit card, stripe, payments, woocommerce, woo
 Requires at least: 6.6
 Tested up to: 6.8.3
 Requires PHP: 7.4
-Stable tag: 9.9.2
+Stable tag: 10.0.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Attributions: thorsten-stripe
@@ -110,7 +110,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 10.0.1 - xxxx-xx-xx =
+= 10.0.1 - 2025-10-15 =
 * Fix - Remove persistent reconnection notices
 
 = 10.0.0 - 2025-10-14 =

@@ -1,6 +1,6 @@
 *** Changelog ***
 
-= 10.0.1 - xxxx-xx-xx =
+= 10.0.1 - 2025-10-15 =
 * Fix - Remove persistent reconnection notices
 
 = 10.0.0 - 2025-10-14 =
