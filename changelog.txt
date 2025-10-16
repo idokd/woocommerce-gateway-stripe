@@ -1,6 +1,7 @@
 *** Changelog ***
 
 = 10.1.0 - xxxx-xx-xx =
+* Update - Removes unnecessary legacy checkout gateway instantiations and UPE disablement code
 * Dev - Renames previous Order Helper class methods to use the `_id` suffix
 * Dev - Expands the Stripe Order Helper class to handle customer ID, card ID, UPE payment type, and UPE redirect status metas
 * Fix - Remove persistent reconnection notices
