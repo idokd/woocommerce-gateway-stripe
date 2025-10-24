@@ -119,5 +119,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Dev - Expands the Stripe Order Helper class to handle customer ID, card ID, UPE payment type, and UPE redirect status metas
 * Fix - Remove redundant secret management logic when configuring webhooks
 * Dev - Improve Payment Method Configuration error logging
+* Dev - Add Stripe's request-id to API response logs
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
