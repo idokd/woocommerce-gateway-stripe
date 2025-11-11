@@ -142,5 +142,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Dev - Add verbose debug logging mode to the OAuth connect flow
 * Fix - Disable Amazon Pay when taxes are based on billing address and add notices with details
 * Fix - Fix express checkout error for a Saudi Arabian address without state and postal code
+* Fix - Ensure we have a fallback for shipping rate names in classic checkout
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
