@@ -132,5 +132,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Make token detachment checks use shared logic for detaching payment methods
 * Fix - Ensure express payment methods are processed correctly when Optimized Checkout is enabled
 * Update - Include customer data in wc_stripe_create_customer_required_fields filter
+* Fix - Fix error handling when processing subscription renewals
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
