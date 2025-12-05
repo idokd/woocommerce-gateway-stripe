@@ -35,6 +35,7 @@
 * Fix - Fix revoked secret_key error during the OAuth account connection flow
 * Add - Add wc_stripe_express_checkout_normalize_address filter for express checkout address normalization
 * Update - Expand Amazon Pay support for all permitted currencies and countries
+* Add - Allow cache prefetch window to be adjusted via the wc_stripe_database_cache_prefetch_window filter
 
 = 10.1.0 - 2025-11-11 =
 * Dev - Remove unused `shouldShowPaymentRequestButton` parameter and calculations from backend
