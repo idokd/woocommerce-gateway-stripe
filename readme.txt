@@ -147,5 +147,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Add - Add wc_stripe_express_checkout_normalize_address filter for express checkout address normalization
 * Update - Expand Amazon Pay support for all permitted currencies and countries
 * Add - Allow cache prefetch window to be adjusted via the wc_stripe_database_cache_prefetch_window filter
+* Fix - Respect button.radius value of 0 in Express Checkout Element appearance settings
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
