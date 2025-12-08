@@ -1,5 +1,8 @@
 *** Changelog ***
 
+= 10.3.0 - xxxx-xx-xx =
+
+
 = 10.2.0 - 2025-12-08 =
 * Dev - Refactor display logic for payment method issue pills
 * Update - Improves the error log for SSL connection missing when trying to render the express checkout buttons
