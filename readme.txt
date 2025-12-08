@@ -150,5 +150,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Respect button.radius value of 0 in Express Checkout Element appearance settings
 * Fix - Prefill customer billing information on the Pay for Order and Change Payment Method pages
 * Fix - Exclude order parameter from customer creation request arguments
+* Fix - Generate OAuth URLs on-demand when connecting to Stripe instead of pre-generating them on page load
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
