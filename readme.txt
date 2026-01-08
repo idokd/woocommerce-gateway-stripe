@@ -169,5 +169,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Tweak - Update PHPDoc for WC_Stripe_Payment_Gateway->get_intent_from_order()
 * Tweak - Fix return type for WC_Stripe_Order_Helper::get_instance()
 * Fix - Ensure express checkout is enabled in current context before registering the express checkout script
+* Fix - Prevent warnings for Amazon Pay in Express Checkout block
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
