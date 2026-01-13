@@ -139,59 +139,42 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 10.2.0 - 2025-12-08 =
-
-**New Features**
-
-* Update - Enable the Optimized Checkout Suite feature for all new installations
-* Update - Add minimum transaction amounts for BRL, INR, NZD, THB, CZK, HUF, AED, MYR, PLN, RON
+= 10.3.0 - 2026-01-13 =
 
 **Important Fixes and Updates**
+* Fix - Error when using Puerto Rico addresses with express checkouts
+* Fix - Update Ukraine state mapping list
+* Fix - Calculate subtotal correctly in express checkout
+* Fix - Resolve Level3 data validation error caused by rounding precision when shipping rates have 3+ decimal places
+* Fix - Preserve express checkout button location settings when upgrading from older plugin versions
+* Fix - Ensure express checkout is enabled in current context before registering the express checkout script
+* Fix - Initialization bugs during gateway reconnections
+* Tweak - Change BLIK confirmation webhook processing from deferred to immediate
+* Update - Increase Afterpay/Clearpay maximum transaction amount to 4,000 AUD and 4,000 NZD
+* Update - Deprecate and replace Payment Request Button classes with Express Checkout equivalents
+* Update - Remove legacy checkout payment method classes
 
-* Add - Implement cache prefetch for account data
-* Add - Allow cache prefetch window to be adjusted via the wc_stripe_database_cache_prefetch_window filter
-* Add - Add wc_stripe_express_checkout_normalize_address filter for express checkout address normalization
-* Update - Include customer data in wc_stripe_create_customer_required_fields filter
-* Fix - Ensure state and postal code are optional in express checkout for Gulf countries (UAE, Bahrain, Kuwait, Oman, Qatar)
-* Fix - Ensure correct express checkout prices in block cart and checkout with non-default decimal configuration
-* Fix - Don't allow WP-Cron jobs to detach payment methods on staging sites
-* Fix - Generate OAuth URLs on-demand when connecting to Stripe instead of pre-generating them on page load
-* Fix - Always use the current payment method configuration in Optimized Checkout
-* Fix - Generate OAuth URLs on-demand when connecting to Stripe instead of pre-generating them on page load
-
-**Other Fixes**
-
-* Update - Changes the list of payment methods shown in the Stripe account connection modal
-* Update - Better notices and interactions for disabled express checkout methods
-* Update - Changes labels related to saved payment methods from "cards" to "payment methods"
-* Fix - Allow payment methods to be disabled when they are not available
-* Fix - Ensure Amazon Pay, Apple Pay, and Google Pay display settings are managed correctly
-* Fix - Ensure express payment methods are processed correctly when Optimized Checkout is enabled
-* Fix - Fix error handling when processing subscription renewals
-* Fix - Prefill customer billing information on the Pay for Order and Change Payment Method pages
-* Fix - Respect button.radius value of 0 in Express Checkout Element appearance settings
-* Fix - Fix revoked secret_key error during the OAuth account connection flow
-* Fix - Exclude order parameter from customer creation request arguments
+**Other Fixes and Updates**
+* Fix - Ensure that 'Link' and 'Stripe Link' are not translated
+* Fix - Fix situation where Stripe errors were not translated
+* Tweak - Improve error messages when Stripe API requests fail to better distinguish between request and retrieval errors
+* Tweak - Simplify logic for default settings and wc_stripe_settings filter
 
 **Internal Changes and Upcoming Features**
-
-* Update - Improves the error log for SSL connection missing when trying to render the express checkout buttons
-* Update - Expand Amazon Pay support for all permitted currencies and countries
-* Fix - Make token detachment checks use shared logic for detaching payment methods
-* Fix - Disable express checkout when Amazon Pay is disabled and the only method
-* Fix - Use the built-in Database Cache for the Connect flow data
-* Tweak - Hide Amazon Pay from the standard payments in Optimized Checkout
-* Dev - Refactor display logic for payment method issue pills
-* Dev - Deprecates all the legacy checkout payment method classes
-* Dev - Deprecates all the LPM class constants
+* Dev - Require milestones to be set on pull requests
+* Dev - Rename the express checkout frontend main setting key
+* Dev - Rename the express checkout customization route
+* Dev - Rename all express checkout related frontend hooks
+* Dev - Remove deprecated legacy checkout settings retrieval methods
 * Dev - Remove all references to the UPE-enabled feature flag
-* Dev - Removing all usages of the `is_stripe_ece_enabled` feature flag method
-* Dev - Expands the Stripe Order Helper class to handle mandate ID, Multibanco data, refund status, card brand, charge captured flag, status final flag, and the refund failure reason
-* Dev - Remove the merchant email address from the System Status Report
-* Dev - Replace the constant reference for the legacy SEPA payment method
-* Dev - Add logging with DNS resolution diagnostics for URL validation issues when calling Stripe API
-* Dev - Removes the `_wcstripe_feature_upe` feature flag and the related method from the `WC_Stripe_Feature_Flags` class
-* Dev - Fixes some incorrect subscriptions support implementations for payment methods
-* Dev - Add additional context data to the OAuth connect flow verbose debug logging mode
+* Dev - Remove deprecated promotional banners (related to legacy checkout)
+* Dev - Add configuration and workflow for PHPStan
+* Dev - Improve PHPStan handling of plugin constants
+* Dev - Ensure multiple subdirectories are not exposed via Docker container
+* Dev - Fix ACH E2E tests for updated Stripe test flow
+* Fix - Use same default locations for Amazon Pay express checkout
+* Fix - Prevent warnings for Amazon Pay in Express Checkout block
+* Tweak - Update PHPDoc for WC_Stripe_Payment_Gateway->get_intent_from_order()
+* Tweak - Fix return type for WC_Stripe_Order_Helper::get_instance()
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
