@@ -139,7 +139,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 10.3.0 - xxxx-xx-xx =
+= 10.3.0 - 2026-01-13 =
 
 **Important Fixes and Updates**
 * Fix - Error when using Puerto Rico addresses with express checkouts
