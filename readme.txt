@@ -4,7 +4,7 @@ Tags: credit card, stripe, payments, woocommerce, woo
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 10.1.0
+Stable tag: 10.3.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Attributions: thorsten-stripe
@@ -139,42 +139,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 10.3.0 - 2026-01-13 =
-
-**Important Fixes and Updates**
-* Fix - Error when using Puerto Rico addresses with express checkouts
-* Fix - Update Ukraine state mapping list
-* Fix - Calculate subtotal correctly in express checkout
-* Fix - Resolve Level3 data validation error caused by rounding precision when shipping rates have 3+ decimal places
-* Fix - Preserve express checkout button location settings when upgrading from older plugin versions
-* Fix - Ensure express checkout is enabled in current context before registering the express checkout script
-* Fix - Initialization bugs during gateway reconnections
-* Tweak - Change BLIK confirmation webhook processing from deferred to immediate
-* Update - Increase Afterpay/Clearpay maximum transaction amount to 4,000 AUD and 4,000 NZD
-* Update - Deprecate and replace Payment Request Button classes with Express Checkout equivalents
-* Update - Remove legacy checkout payment method classes
-
-**Other Fixes and Updates**
-* Fix - Ensure that 'Link' and 'Stripe Link' are not translated
-* Fix - Fix situation where Stripe errors were not translated
-* Tweak - Improve error messages when Stripe API requests fail to better distinguish between request and retrieval errors
-* Tweak - Simplify logic for default settings and wc_stripe_settings filter
-
-**Internal Changes and Upcoming Features**
-* Dev - Require milestones to be set on pull requests
-* Dev - Rename the express checkout frontend main setting key
-* Dev - Rename the express checkout customization route
-* Dev - Rename all express checkout related frontend hooks
-* Dev - Remove deprecated legacy checkout settings retrieval methods
-* Dev - Remove all references to the UPE-enabled feature flag
-* Dev - Remove deprecated promotional banners (related to legacy checkout)
-* Dev - Add configuration and workflow for PHPStan
-* Dev - Improve PHPStan handling of plugin constants
-* Dev - Ensure multiple subdirectories are not exposed via Docker container
-* Dev - Fix ACH E2E tests for updated Stripe test flow
-* Fix - Use same default locations for Amazon Pay express checkout
-* Fix - Prevent warnings for Amazon Pay in Express Checkout block
-* Tweak - Update PHPDoc for WC_Stripe_Payment_Gateway->get_intent_from_order()
-* Tweak - Fix return type for WC_Stripe_Order_Helper::get_instance()
+= 10.3.1 - xxxx-xx-xx =
+* Fix - Fatal error when using express payment method with certain addresses
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).

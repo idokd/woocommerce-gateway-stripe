@@ -1,5 +1,8 @@
 *** Changelog ***
 
+= 10.3.1 - xxxx-xx-xx =
+* Fix - Fatal error when using express payment method with certain addresses
+
 = 10.3.0 - 2026-01-13 =
 * Update - Increase Afterpay/Clearpay maximum transaction amount to 4,000 AUD and 4,000 NZD
 * Dev - Require milestones to be set on pull requests
