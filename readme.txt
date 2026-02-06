@@ -169,6 +169,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Better error handling when token creation fails
 * Tweak - Improve PHPDoc for payment token code
 * Tweak - Update PHPDoc for email notification classes
+* Add - Admin notice for merchants potentially affected by the express checkout button location issue in versions 10.1.0 to 10.2.x
 * Add - Support Amazon Pay as an express checkout method
 * Add - Enable Amazon Pay for eligible new installs
 * Update - Stop auto-enabling Optimized Checkout Suite for new installs
