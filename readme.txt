@@ -145,45 +145,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 10.4.0 - 2026-02-09 =
-
-**New Features**
-* Add - Enable Amazon Pay for eligible new installs
-* Add - Support Amazon Pay as an express checkout method
-
-**Important Fixes and Updates**
-* Add - Admin notice for merchants potentially affected by the express checkout button location issue in versions 10.1.0 to 10.2.x
-* Add - Map Norwegian nb-NO to generic no-NO locale
-* Update - Redirect merchants to the Stripe settings screen upon plugin activation
-* Update - Stop auto-enabling Optimized Checkout Suite for new installs
-* Fix - Prevent Optimized Checkout from showing unsupported payment methods
-* Fix - Fix Stripe client API calls with wrong amount when rendering the express checkout buttons in blocks
-
-**Other Fixes and Updates**
-* Update - Ensure the `customer_name` metadata sent to Stripe does not have leading or trailing spaces
-* Fix - Validate product exists before accessing product methods in express checkout to prevent fatal errors
-* Fix - Add order validation in Multibanco email instructions to prevent fatal error when order is invalid
-* Fix - Add validation to prevent fatal error when setting default payment token if token doesn't exist
-* Fix - Validate order object before accessing methods in my account orders actions to prevent fatal errors
-* Fix - Resolve false incompatibility warnings for Block Editor payment methods
-* Fix - Prevent credit card input fields from being cleared in the Optimized Checkout Suite (OCS) when the "Save payment method" checkbox is selected on classic checkout
-* Fix - Better error handling when token creation fails
-
-**Internal Changes and Upcoming Features**
-* Add - New setting to control Adaptive Pricing
-* Add - Introduce an endpoint to create Checkout Sessions tokens
-* Update - Move all logic from WC_Gateway_Stripe to WC_Stripe_UPE_Payment_Gateway as part of deprecation
-* Update - Remove the main Payment Request Buttons backend class, WC_Stripe_Payment_Request, which was deprecated in 10.2.0
-* Dev - Replace deprecated logger method calls with severity specific methods
-* Dev - Ensure PHPStan runs when pushing changes
-* Dev - Add PHPStan stub for WC_Subscription class
-* Dev - Remove the deprecated WC_Stripe_Apple_Pay class
-* Dev - Unit tests to cover address normalization
-* Dev - Use WC_STRIPE_PLUGIN_PATH constant instead of __DIR__ for more reliable file path resolution
-* Dev - Automate release note creation PR
-* Dev - Introduce a feature flag for the Stripe checkout sessions feature
-* Dev - Improve the pre-push hook
-* Tweak - Improve PHPDoc for payment token code
-* Tweak - Update PHPDoc for email notification classes
+= 10.5.0 - xxxx-xx-xx =
+* Tweak - Update PHPDoc in admin REST controllers and related code
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
