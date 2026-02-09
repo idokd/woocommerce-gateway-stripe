@@ -145,7 +145,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 10.4.0 - xxxx-xx-xx =
+= 10.4.0 - 2026-02-09 =
 
 **New Features**
 * Add - Enable Amazon Pay for eligible new installs
