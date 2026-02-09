@@ -173,5 +173,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Add - Support Amazon Pay as an express checkout method
 * Add - Enable Amazon Pay for eligible new installs
 * Update - Stop auto-enabling Optimized Checkout Suite for new installs
+* Tweak - Update PHPDoc in admin REST controllers and related code
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
