@@ -147,5 +147,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 = 10.5.0 - xxxx-xx-xx =
 * Tweak - Update PHPDoc in admin REST controllers and related code
+* Tweak - Improve PHPDoc for migration and notes; minor notes refactor
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
