@@ -2359,38 +2359,8 @@ parameters:
 			path: includes/class-wc-stripe-blocks-support.php
 
 		-
-			message: '#^Method WC_Stripe_Blocks_Support\:\:add_order_meta\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-blocks-support.php
-
-		-
-			message: '#^Method WC_Stripe_Blocks_Support\:\:add_payment_request_order_meta\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-blocks-support.php
-
-		-
-			message: '#^Method WC_Stripe_Blocks_Support\:\:add_stripe_intents\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-blocks-support.php
-
-		-
 			message: '#^Method WC_Stripe_Blocks_Support\:\:get_title\(\) is unused\.$#'
 			identifier: method.unused
-			count: 1
-			path: includes/class-wc-stripe-blocks-support.php
-
-		-
-			message: '#^Method WC_Stripe_Blocks_Support\:\:initialize\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-blocks-support.php
-
-		-
-			message: '#^Method WC_Stripe_Blocks_Support\:\:register_legacy_payment_method_script_handles\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: includes/class-wc-stripe-blocks-support.php
 
@@ -2401,20 +2371,8 @@ parameters:
 			path: includes/class-wc-stripe-blocks-support.php
 
 		-
-			message: '#^Method WC_Stripe_Blocks_Support\:\:register_upe_payment_method_script_handles\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-blocks-support.php
-
-		-
 			message: '#^Offset ''payment_intent_id'' does not exist on string\.$#'
 			identifier: offsetAccess.notFound
-			count: 1
-			path: includes/class-wc-stripe-blocks-support.php
-
-		-
-			message: '#^PHPDoc tag @extends has invalid value \(AbstractPaymentMethodType\)\: Unexpected token "\\n ", expected ''\<'' at offset 79 on line 4$#'
-			identifier: phpDoc.parseError
 			count: 1
 			path: includes/class-wc-stripe-blocks-support.php
 
@@ -2995,12 +2953,6 @@ parameters:
 			path: includes/class-wc-stripe-intent-controller.php
 
 		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:confirm_change_payment_from_setup_intent_ajax\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
 			message: '#^Method WC_Stripe_Intent_Controller\:\:create_and_confirm_payment_intent\(\) should return stdClass but returns array\|stdClass\.$#'
 			identifier: return.type
 			count: 1
@@ -3013,86 +2965,14 @@ parameters:
 			path: includes/class-wc-stripe-intent-controller.php
 
 		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:create_and_confirm_setup_intent_ajax\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:create_payment_intent_ajax\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:create_setup_intent\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
 			message: '#^Method WC_Stripe_Intent_Controller\:\:get_order_from_request\(\) should return WC_Order but returns WC_Order\|WC_Order_Refund\|true\.$#'
 			identifier: return.type
 			count: 1
 			path: includes/class-wc-stripe-intent-controller.php
 
 		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:handle_error\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:init_hooks\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:init_setup_intent_ajax\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:is_manual_renewal_required\(\) has parameter \$is_payment_method_reusable with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:maybe_process_upe_redirect\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
 			message: '#^Method WC_Stripe_Intent_Controller\:\:update_and_confirm_payment_intent\(\) should return array but returns array\|stdClass\.$#'
 			identifier: return.type
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:update_failed_order_ajax\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:update_order_status_ajax\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:update_payment_intent_ajax\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/class-wc-stripe-intent-controller.php
-
-		-
-			message: '#^Method WC_Stripe_Intent_Controller\:\:verify_intent\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: includes/class-wc-stripe-intent-controller.php
 
@@ -4939,48 +4819,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
 
 		-
-			message: '#^Method WC_Stripe_Express_Checkout_Ajax_Handler\:\:ajax_clear_cart\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Ajax_Handler\:\:ajax_get_cart_details\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Ajax_Handler\:\:ajax_get_shipping_options\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Ajax_Handler\:\:ajax_log_errors\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Ajax_Handler\:\:ajax_normalize_address\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Ajax_Handler\:\:ajax_pay_for_order\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Ajax_Handler\:\:ajax_update_shipping_method\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-ajax-handler.php
-
-		-
 			message: '#^Parameter \#1 \$data of method WC_Stripe_Express_Checkout_Helper\:\:normalize_state\(\) expects array, array\<string\|false\>\|false\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -5043,12 +4881,6 @@ parameters:
 		-
 			message: '#^Method WC_Stripe_Express_Checkout_Custom_Fields\:\:get_custom_checkout_data_from_request\(\) has parameter \$request with generic class WP_REST_Request but does not specify its types\: T$#'
 			identifier: missingType.generics
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-custom-fields.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Custom_Fields\:\:get_custom_checkout_fields\(\) has parameter \$context with no type specified\.$#'
-			identifier: missingType.parameter
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-express-checkout-custom-fields.php
 
@@ -5119,72 +4951,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
 
 		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:display_express_checkout_button_html\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:display_express_checkout_button_separator_html\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:filter_cart_needs_shipping_address\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:filter_gateway_title\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:handle_express_checkout_redirect\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:instance\(\) has invalid return type class\.$#'
-			identifier: class.notFound
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:localize_pay_for_order_page_scripts\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:register_express_checkout_script\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Element\:\:scripts\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^PHPDoc tag @var has invalid value \(\)\: Unexpected token "\\n\\t ", expected type at offset 35 on line 4$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^PHPDoc tag @var has invalid value \(\)\: Unexpected token "\\n\\t ", expected type at offset 37 on line 4$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
 			message: '#^Parameter \#1 \$location of function wp_safe_redirect expects string, string\|false given\.$#'
 			identifier: argument.type
 			count: 1
@@ -5205,18 +4971,6 @@ parameters:
 		-
 			message: '#^Parameter \#3 \$deps of function wp_register_script expects array\<string\>, string given\.$#'
 			identifier: argument.type
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Property WC_Stripe_Express_Checkout_Element\:\:\$_this has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
-
-		-
-			message: '#^Property WC_Stripe_Express_Checkout_Element\:\:\$stripe_settings has no type specified\.$#'
-			identifier: missingType.property
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-express-checkout-element.php
 
@@ -5277,13 +5031,13 @@ parameters:
 		-
 			message: '#^Call to an undefined method object\:\:get_id\(\)\.$#'
 			identifier: method.notFound
-			count: 5
+			count: 4
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
 		-
 			message: '#^Call to an undefined method object\:\:get_type\(\)\.$#'
 			identifier: method.notFound
-			count: 2
+			count: 1
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
 		-
@@ -5323,42 +5077,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
 		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:build_display_items\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:build_display_items\(\) has parameter \$itemized_display_items with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:build_shipping_methods\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:build_shipping_methods\(\) has parameter \$shipping_methods with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:calculate_shipping\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:get_checkout_data\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
 			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:get_default_shipping_option\(\) never returns void so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
@@ -5367,12 +5085,6 @@ parameters:
 		-
 			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:get_login_confirmation_settings\(\) should return array but returns false\.$#'
 			identifier: return.type
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:get_normalized_postal_code\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
@@ -5407,12 +5119,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
 		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:is_product_supported\(\) has parameter \$product with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
 			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:mark_order_as_pre_ordered\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -5425,50 +5131,8 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
 		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:maybe_restore_recurring_chosen_shipping_methods\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
 			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:remove_order_source_before_retry\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:update_shipping_method\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Method WC_Stripe_Express_Checkout_Helper\:\:validate_state\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$data$#'
-			identifier: parameter.notFound
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$param$#'
-			identifier: parameter.notFound
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^PHPDoc tag @var has invalid value \(\)\: Unexpected token "\\n\\t ", expected type at offset 32 on line 4$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^PHPDoc tag @var has invalid value \(\)\: Unexpected token "\\n\\t ", expected type at offset 37 on line 4$#'
-			identifier: phpDoc.parseError
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
@@ -5515,12 +5179,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
 		-
-			message: '#^Parameter \#1 \$product of method WC_Stripe_Express_Checkout_Helper\:\:is_invalid_subscription_product\(\) expects WC_Product\|null, object given\.$#'
-			identifier: argument.type
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
 			message: '#^Parameter \#1 \$product of method WC_Stripe_Express_Checkout_Helper\:\:is_pre_order_product_charged_upon_release\(\) expects object, object\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -5559,18 +5217,6 @@ parameters:
 		-
 			message: '#^Property WC_Stripe_Express_Checkout_Helper\:\:\$gateway \(WC_Stripe_UPE_Payment_Gateway\) does not accept WC_Stripe_Payment_Gateway\.$#'
 			identifier: assign.propertyType
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Property WC_Stripe_Express_Checkout_Helper\:\:\$stripe_settings has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
-
-		-
-			message: '#^Property WC_Stripe_Express_Checkout_Helper\:\:\$total_label has no type specified\.$#'
-			identifier: missingType.property
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-express-checkout-helper.php
 
