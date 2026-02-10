@@ -6775,12 +6775,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-ach.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_ACH\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-ach.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_ACH\:\:handle_add_payment_method_success\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -7297,12 +7291,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-acss.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_ACSS\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-acss.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_ACSS\:\:handle_add_payment_method_success\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -7815,12 +7803,6 @@ parameters:
 		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_Amazon_Pay\:\:get_mandate_for_subscription\(\) has parameter \$payment_method with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-amazon-pay.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Amazon_Pay\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-amazon-pay.php
 
@@ -8359,12 +8341,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-bacs-debit.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Bacs_Debit\:\:maybe_hide_bacs_payment_gateway\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-bacs-debit.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_Bacs_Debit\:\:maybe_init_subscriptions\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -8853,12 +8829,6 @@ parameters:
 		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_Bancontact\:\:get_mandate_for_subscription\(\) has parameter \$payment_method with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-bancontact.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Bancontact\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-bancontact.php
 
@@ -9367,12 +9337,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-becs-debit.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Becs_Debit\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-becs-debit.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_Becs_Debit\:\:handle_add_payment_method_success\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -9553,25 +9517,7 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-becs-debit.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_BLIK\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-blik.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_BLIK\:\:get_testing_instructions\(\) has parameter \$show_optimized_checkout_instruction with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-blik.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_BLIK\:\:maybe_hide_blik\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-blik.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_BLIK\:\:payment_fields\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-blik.php
@@ -9581,18 +9527,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-blik.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Boleto\:\:add_allowed_payment_processing_statuses\(\) has parameter \$allowed_statuses with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-boleto.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Boleto\:\:add_allowed_payment_processing_statuses\(\) has parameter \$order with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-boleto.php
 
 		-
 			message: '#^Property WC_Stripe_UPE_Payment_Method\:\:\$can_refund \(array\) does not accept false\.$#'
@@ -10447,18 +10381,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-cc.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_CC\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-cc.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_CC\:\:get_testing_instructions\(\) has parameter \$show_optimized_checkout_instruction with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-cc.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_CC\:\:handle_add_payment_method_success\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -10977,12 +10899,6 @@ parameters:
 		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_Ideal\:\:get_mandate_for_subscription\(\) has parameter \$payment_method with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-ideal.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Ideal\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-ideal.php
 
@@ -11677,52 +11593,10 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-link.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Link\:\:filter_gateway_title\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-link.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Link\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-link.php
-
-		-
 			message: '#^Return type \(WC_Payment_Token_Link\) of method WC_Stripe_UPE_Payment_Method_Link\:\:create_payment_token_for_user\(\) should be compatible with return type \(WC_Payment_Token_SEPA\) of method WC_Stripe_UPE_Payment_Method\:\:create_payment_token_for_user\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-link.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Multibanco\:\:add_allowed_payment_processing_statuses\(\) has parameter \$allowed_statuses with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-multibanco.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Multibanco\:\:add_allowed_payment_processing_statuses\(\) has parameter \$order with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-multibanco.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Multibanco\:\:get_instructions\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-multibanco.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Multibanco\:\:save_instructions\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-multibanco.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Multibanco\:\:thankyou_page\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-multibanco.php
 
 		-
 			message: '#^Offset ''amount'' does not exist on non\-falsy\-string\.$#'
@@ -12103,18 +11977,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-oc.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_OC\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-oc.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_OC\:\:get_testing_instructions\(\) has parameter \$show_optimized_checkout_instruction with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-oc.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_OC\:\:handle_add_payment_method_success\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -12287,18 +12149,6 @@ parameters:
 			identifier: isset.variable
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-oc.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Oxxo\:\:add_allowed_payment_processing_statuses\(\) has parameter \$allowed_statuses with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-oxxo.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Oxxo\:\:add_allowed_payment_processing_statuses\(\) has parameter \$order with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-oxxo.php
 
 		-
 			message: '#^Property WC_Stripe_UPE_Payment_Method\:\:\$can_refund \(array\) does not accept false\.$#'
@@ -12638,18 +12488,6 @@ parameters:
 
 		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method_Sepa\:\:get_mandate_for_subscription\(\) has parameter \$payment_method with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-sepa.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Sepa\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method-sepa.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method_Sepa\:\:get_testing_instructions\(\) has parameter \$show_optimized_checkout_instruction with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method-sepa.php
@@ -13387,12 +13225,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:__call\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:can_refund_via_stripe\(\) should return bool but returns array\.$#'
 			identifier: return.type
 			count: 1
@@ -13405,12 +13237,6 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:get_card_wallet_type_title\(\) has parameter \$express_payment_type with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:get_pre_order_product_from_cart\(\) should return object\|null but returns false\.$#'
 			identifier: return.type
 			count: 1
@@ -13419,18 +13245,6 @@ parameters:
 		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:get_pre_order_product_from_order\(\) should return object\|null but returns false\.$#'
 			identifier: return.type
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:get_retrievable_type\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:get_woocommerce_currency\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
 
@@ -13453,19 +13267,7 @@ parameters:
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
 
 		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:payment_fields\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
-
-		-
 			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:remove_order_source_before_retry\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
-
-		-
-			message: '#^Method WC_Stripe_UPE_Payment_Method\:\:save_payment_method_checkbox\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: includes/payment-methods/class-wc-stripe-upe-payment-method.php
