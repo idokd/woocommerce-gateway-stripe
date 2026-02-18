@@ -148,6 +148,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 10.5.0 - xxxx-xx-xx =
+* Dev - Deprecate old unused feature flag backend methods and remove related code from the frontend
 * Dev - Remove unused frontend code related to block checkout
 * Update - Move class instantiations from their definition files to the plugin initialization code
 * Update - Deprecate unused non-deferred intent methods in WC_Stripe_UPE_Payment_Gateway
