@@ -189,5 +189,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Dev - Use PaymentGatewayFeature constants instead of raw strings for payment gateway feature declarations in UPE payment method classes and traits
 * Fix - Only load Stripe JS (not the full UPE bundle) on product and cart pages when express checkout is disabled
 * Fix - Fix script dependencies and script cache versioning for classic checkout
+* Fix - Remove transient style caching in favor of a simple in-memory frontend cache
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
