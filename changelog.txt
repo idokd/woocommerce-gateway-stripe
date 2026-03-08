@@ -43,6 +43,7 @@
 * Fix - Only load Stripe JS (not the full UPE bundle) on product and cart pages when express checkout is disabled
 * Fix - Fix script dependencies and script cache versioning for classic checkout
 * Fix - Remove transient style caching in favor of a simple in-memory frontend cache
+* Fix - Improve Stripe element appearance on non-checkout pages
 
 = 10.4.0 - 2026-02-09 =
 * Add - Introduce an endpoint to create Checkout Sessions tokens
