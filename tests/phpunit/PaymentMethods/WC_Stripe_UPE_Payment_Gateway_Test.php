@@ -44,6 +44,7 @@ use WC_Subscriptions_Helpers;
 use MockAction;
 use WC_Stripe_API;
 use WooCommerce\Stripe\Tests\Helpers\WC_Helper_Order;
+use WooCommerce\Stripe\Tests\Helpers\WC_Helper_Product;
 use WooCommerce\Stripe\Tests\Helpers\WC_Helper_Token;
 use WooCommerce\Stripe\Tests\WC_Mock_Stripe_API_Unit_Test_Case;
 
@@ -265,6 +266,25 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 		WC_Stripe_Database_Cache::delete( WC_Stripe_API::INVALID_API_KEY_ERROR_COUNT_CACHE_KEY );
 
 		parent::tear_down();
+	}
+
+	/**
+	 * Helper function to ensure that scripts and styles are de-registered and de-queued.
+	 *
+	 * @param string[] $script_handles The script handles to clean up.
+	 * @param string[] $style_handles  The style handles to clean up.
+	 * @return void
+	 */
+	protected function clean_up_scripts( array $script_handles = [], array $style_handles = [] ): void {
+		foreach ( $script_handles as $script_handle ) {
+			wp_deregister_script( $script_handle );
+			wp_dequeue_script( $script_handle );
+		}
+
+		foreach ( $style_handles as $style_handle ) {
+			wp_deregister_style( $style_handle );
+			wp_dequeue_style( $style_handle );
+		}
 	}
 
 	/**
@@ -507,65 +527,69 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	}
 
 	/**
-	 * Test basic checkout process_payment flow.
+	 * Test that payment_scripts registers the wc-stripe-upe-classic script with the correct version and dependencies.
+	 *
+	 * Because build/upe-classic.asset.php may not be present in test environments, we have conditional logic as follows:
+	 *  - When build/upe-classic.asset.php exists, we verify the script version and dependencies from that file are used.
+	 *  - When build/upe-classic.asset.php does not exist, we verify the fallback values are used.
 	 */
-	public function test_process_payment_returns_valid_response() {
-		$payment_intent_id = 'pi_mock';
-		$customer_id       = 'cus_mock';
-		$order             = WC_Helper_Order::create_order();
-		$currency          = $order->get_currency();
-		$order_id          = $order->get_id();
+	public function test_payment_scripts_registers_script_with_correct_version(): void {
+		$asset_path = WC_STRIPE_PLUGIN_PATH . '/build/upe-classic.asset.php';
 
-		$order_helper = WC_Stripe_Order_Helper::get_instance();
-		$order_helper->update_stripe_intent_id( $order, $payment_intent_id );
-		$order_helper->update_stripe_upe_payment_type( $order, '' );
-		$order_helper->update_stripe_upe_waiting_for_redirect( $order, true );
-		$order->save();
+		// Determine the expected version without modifying any files: if the compiled asset file
+		// is present (i.e. a build has been run), mirror the same logic used in payment_scripts().
+		$expected_version      = WC_STRIPE_VERSION;
+		$expected_dependencies = [ 'stripe', 'wc-checkout' ];
+		if ( file_exists( $asset_path ) ) {
+			$asset = require $asset_path;
+			if ( is_array( $asset ) ) {
+				if ( isset( $asset['version'] ) ) {
+					$expected_version = $asset['version'];
+				}
+				if ( isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ) {
+					$expected_dependencies = array_merge( $expected_dependencies, $asset['dependencies'] );
+				}
+			}
+		} else {
+			$expected_dependencies = array_merge( $expected_dependencies, [ 'wp-i18n' ] );
+		}
 
-		list( $amount, $description, $metadata ) = $this->get_order_details( $order );
+		// Build a gateway mock that stubs javascript_params to avoid full WooCommerce/Stripe
+		// account setup, which is not the subject of this test.
+		$gateway = $this->getMockBuilder( WC_Stripe_UPE_Payment_Gateway::class )
+			->setConstructorArgs( [] )
+			->onlyMethods( [ 'javascript_params', 'get_return_url' ] )
+			->getMock();
+		$gateway->method( 'javascript_params' )->willReturn( [] );
+		$gateway->method( 'get_return_url' )->willReturn( self::MOCK_RETURN_URL );
+		$gateway->enabled = 'yes';
 
-		$expected_request = [
-			'amount'      => $amount,
-			'currency'    => $currency,
-			'description' => $description,
-			'customer'    => $customer_id,
-			'metadata'    => $metadata,
-		];
+		// Make is_checkout() return true so payment_scripts() passes its page guard.
+		add_filter( 'woocommerce_is_checkout', '__return_true' );
 
-		$_POST = [
-			'payment_method'       => 'stripe',
-			'wc_payment_intent_id' => $payment_intent_id,
-		];
+		$this->clean_up_scripts(
+			[ 'stripe', 'wc-stripe-upe-classic' ],
+			[ 'stripelink_styles', 'wc-stripe-upe-classic' ]
+		);
 
-		$this->mock_gateway->expects( $this->any() )
-			->method( 'get_stripe_customer_from_order' )
-			->with( wc_get_order( $order_id ) )
-			->will(
-				$this->returnValue( $this->mock_stripe_customer )
-			);
-		$this->mock_gateway->expects( $this->once() )
-			->method( 'stripe_request' )
-			->with(
-				"payment_intents/$payment_intent_id",
-				$expected_request,
-				$this->callback(
-					function ( $passed_order ) use ( $order ) {
-						return $order->get_id() === $passed_order->get_id();
-					}
-				)
-			)
-			->will(
-				$this->returnValue( [] )
-			);
+		$gateway->payment_scripts();
 
-		$response = $this->mock_gateway->process_payment( $order_id );
+		// The script should be registered with the version we derived above.
+		$script_is_registered = wp_script_is( 'wc-stripe-upe-classic', 'registered' );
+		$registered_script = wp_scripts()->registered['wc-stripe-upe-classic'] ?? null;
 
-		$this->assertEquals( 'success', $response['result'] );
-		$this->assertTrue( $response['payment_needed'] );
-		$this->assertEquals( $order_id, $response['order_id'] );
-		$this->assertMatchesRegularExpression( "/order_id=$order_id/", $response['redirect_url'] );
-		$this->assertMatchesRegularExpression( '/wc_payment_method=stripe/', $response['redirect_url'] );
-		$this->assertMatchesRegularExpression( '/save_payment_method=no/', $response['redirect_url'] );
+		// Clean up registered scripts/styles and the filter so subsequent tests are not affected.
+		remove_filter( 'woocommerce_is_checkout', '__return_true' );
+
+		$this->clean_up_scripts(
+			[ 'stripe', 'wc-stripe-upe-classic' ],
+			[ 'stripelink_styles', 'wc-stripe-upe-classic' ]
+		);
+
+		$this->assertTrue( $script_is_registered, 'wc-stripe-upe-classic script is not registered' );
+		$this->assertNotNull( $registered_script, 'wc-stripe-upe-classic script is not a valid object' );
+		$this->assertSame( $expected_version, $registered_script->ver, 'wc-stripe-upe-classic script version is not the same as the expected version' );
+		$this->assertSame( $expected_dependencies, $registered_script->deps, 'wc-stripe-upe-classic script dependencies are not the same as the expected dependencies' );
 	}
 
 	/**
@@ -595,7 +619,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 			self::MOCK_CARD_PAYMENT_INTENT_TEMPLATE
 		);
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
 		$_POST = $post_vars;
 
 		$this->mock_gateway->intent_controller
@@ -628,7 +651,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => 'stripe',
 					'wc-stripe-payment-method'     => 'pm_mock',
 					'wc-stripe-confirmation-token' => '',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 			'with-confirmation-token' => [
@@ -636,7 +658,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => 'stripe',
 					'wc-stripe-payment-method'     => '',
 					'wc-stripe-confirmation-token' => 'ctoken_mock',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 		];
@@ -669,11 +690,9 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 			self::MOCK_CARD_PAYMENT_INTENT_TEMPLATE
 		);
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
 		$_POST = [
-			'payment_method'               => 'stripe',
-			'wc-stripe-payment-method'     => 'pm_mock',
-			'wc-stripe-is-deferred-intent' => '1',
+			'payment_method'           => 'stripe',
+			'wc-stripe-payment-method' => 'pm_mock',
 		];
 
 		$this->mock_gateway->intent_controller
@@ -742,11 +761,9 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 			self::MOCK_WECHAT_PAY_PAYMENT_INTENT_TEMPLATE
 		);
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
 		$_POST = [
-			'payment_method'               => 'stripe_' . $payment_method,
-			'wc-stripe-payment-method'     => 'pm_mock',
-			'wc-stripe-is-deferred-intent' => '1',
+			'payment_method'           => 'stripe_' . $payment_method,
+			'wc-stripe-payment-method' => 'pm_mock',
 		];
 
 		if ( $saved_token ) {
@@ -879,7 +896,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => 'stripe',
 					'wc-stripe-payment-method'     => 'pm_mock',
 					'wc-stripe-confirmation-token' => '',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 			'with-confirmation-token' => [
@@ -887,7 +903,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => 'stripe',
 					'wc-stripe-payment-method'     => '',
 					'wc-stripe-confirmation-token' => 'ctoken_mock',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 		];
@@ -948,7 +963,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => '',
 					'wc-stripe-payment-method'     => 'pm_mock',
 					'wc-stripe-confirmation-token' => '',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 			'with-confirmation-token' => [
@@ -956,7 +970,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => '',
 					'wc-stripe-payment-method'     => '',
 					'wc-stripe-confirmation-token' => 'ctoken_mock',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 		];
@@ -1017,7 +1030,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => 'some_invalid_type',
 					'wc-stripe-payment-method'     => 'pm_mock',
 					'wc-stripe-confirmation-token' => '',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 			'with-confirmation-token' => [
@@ -1025,7 +1037,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 					'payment_method'               => 'some_invalid_type',
 					'wc-stripe-payment-method'     => '',
 					'wc-stripe-confirmation-token' => 'ctoken_mock',
-					'wc-stripe-is-deferred-intent' => '1',
 				],
 			],
 		];
@@ -1618,10 +1629,8 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	public function test_process_payment_with_saved_method_returns_valid_response() {
 		$token = $this->set_postvars_for_saved_payment_method();
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
-		$_POST['wc-stripe-is-deferred-intent'] = '1';
-		$_POST['payment_method']               = 'stripe';
-		$_POST['wc-stripe-payment-method']     = 'pm_mock';
+		$_POST['payment_method']           = 'stripe';
+		$_POST['wc-stripe-payment-method'] = 'pm_mock';
 
 		$order             = WC_Helper_Order::create_order();
 		$order_id          = $order->get_id();
@@ -1706,10 +1715,8 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	public function test_sca_checkout_with_saved_payment_method_redirects_client() {
 		$token = $this->set_postvars_for_saved_payment_method();
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
-		$_POST['wc-stripe-is-deferred-intent'] = '1';
-		$_POST['payment_method']               = 'stripe';
-		$_POST['wc-stripe-payment-method']     = 'pm_mock';
+		$_POST['payment_method']           = 'stripe';
+		$_POST['wc-stripe-payment-method'] = 'pm_mock';
 
 		$order             = WC_Helper_Order::create_order();
 		$order_id          = $order->get_id();
@@ -1790,10 +1797,8 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	public function test_checkout_with_saved_payment_method_non_retryable_error_throws_exception() {
 		$token = $this->set_postvars_for_saved_payment_method();
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
-		$_POST['wc-stripe-is-deferred-intent'] = '1';
-		$_POST['payment_method']               = 'stripe';
-		$_POST['wc-stripe-payment-method']     = 'pm_mock';
+		$_POST['payment_method']           = 'stripe';
+		$_POST['wc-stripe-payment-method'] = 'pm_mock';
 
 		$order             = WC_Helper_Order::create_order();
 		$order_id          = $order->get_id();
@@ -1851,10 +1856,8 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	public function test_checkout_with_saved_payment_method_retries_error_when_possible() {
 		$token = $this->set_postvars_for_saved_payment_method();
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
-		$_POST['wc-stripe-is-deferred-intent'] = '1';
-		$_POST['payment_method']               = 'stripe';
-		$_POST['wc-stripe-payment-method']     = 'pm_mock';
+		$_POST['payment_method']           = 'stripe';
+		$_POST['wc-stripe-payment-method'] = 'pm_mock';
 
 		$order             = WC_Helper_Order::create_order();
 		$order_id          = $order->get_id();
@@ -1955,10 +1958,8 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	public function test_checkout_with_saved_payment_method_fails_after_six_attempts() {
 		$token = $this->set_postvars_for_saved_payment_method();
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
-		$_POST['wc-stripe-is-deferred-intent'] = '1';
-		$_POST['payment_method']               = 'stripe';
-		$_POST['wc-stripe-payment-method']     = 'pm_mock';
+		$_POST['payment_method']           = 'stripe';
+		$_POST['wc-stripe-payment-method'] = 'pm_mock';
 
 		$order             = WC_Helper_Order::create_order();
 		$order_id          = $order->get_id();
@@ -2038,118 +2039,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 	/**
 	 * TESTS FOR SUBSCRIPTIONS.
 	 */
-
-	/**
-	 * Initial subscription test.
-	 */
-	public function test_if_order_has_subscription_payment_method_will_be_saved() {
-		$payment_intent_id = 'pi_mock';
-		$customer_id       = 'cus_mock';
-		$order             = WC_Helper_Order::create_order();
-		$currency          = $order->get_currency();
-		$order_id          = $order->get_id();
-
-		$order_helper = WC_Stripe_Order_Helper::get_instance();
-
-		$order_helper->update_stripe_intent_id( $order, $payment_intent_id );
-		$order_helper->update_stripe_upe_payment_type( $order, '' );
-		$order_helper->update_stripe_upe_waiting_for_redirect( $order, true );
-		$order->save();
-
-		list( $amount, $description, $metadata ) = $this->get_order_details( $order );
-
-		// When the order contains a subscription, the payment type is expected to be "recurring".
-		$metadata['payment_type'] = 'recurring';
-
-		$expected_request = [
-			'amount'             => $amount,
-			'currency'           => $currency,
-			'description'        => $description,
-			'customer'           => $customer_id,
-			'metadata'           => $metadata,
-			'setup_future_usage' => 'off_session',
-		];
-
-		$_POST = [
-			'payment_method'       => 'stripe',
-			'wc_payment_intent_id' => $payment_intent_id,
-		];
-
-		$this->mock_gateway->expects( $this->any() )
-			->method( 'is_subscriptions_enabled' )
-			->will( $this->returnValue( true ) );
-
-		$this->mock_gateway->expects( $this->any() )
-			->method( 'has_subscription' )
-			->will( $this->returnValue( true ) );
-
-		$this->mock_gateway->expects( $this->any() )
-			->method( 'get_stripe_customer_from_order' )
-			->with( wc_get_order( $order_id ) )
-			->will(
-				$this->returnValue( $this->mock_stripe_customer )
-			);
-
-		$this->mock_gateway->expects( $this->once() )
-			->method( 'stripe_request' )
-			->with(
-				"payment_intents/$payment_intent_id",
-				$expected_request,
-				$this->callback(
-					function ( $passed_order ) use ( $order ) {
-						return $order->get_id() === $passed_order->get_id();
-					}
-				)
-			)
-			->will(
-				$this->returnValue( [] )
-			);
-
-		$response = $this->mock_gateway->process_payment( $order_id );
-
-		$this->assertEquals( 'success', $response['result'] );
-		$this->assertTrue( $response['payment_needed'] );
-		$this->assertEquals( $order_id, $response['order_id'] );
-		$this->assertMatchesRegularExpression( "/order_id=$order_id/", $response['redirect_url'] );
-		$this->assertMatchesRegularExpression( '/wc_payment_method=stripe/', $response['redirect_url'] );
-		$this->assertMatchesRegularExpression( '/save_payment_method=yes/', $response['redirect_url'] );
-	}
-
-	/**
-	 * Initial subscription test with free-trial.
-	 */
-	public function test_if_free_trial_subscription_will_not_update_intent() {
-		$setup_intent_id = 'seti_mock';
-		$order           = WC_Helper_Order::create_order();
-		$order_id        = $order->get_id();
-
-		$order->set_total( 0 );
-		$order->save();
-
-		$_POST = [
-			'payment_method'       => 'stripe',
-			'wc_payment_intent_id' => $setup_intent_id,
-		];
-
-		$this->mock_gateway->expects( $this->any() )
-			->method( 'has_subscription' )
-			->will( $this->returnValue( true ) );
-
-		$this->mock_gateway->expects( $this->never() )
-			->method( 'get_stripe_customer_from_order' );
-
-		$this->mock_gateway->expects( $this->never() )
-			->method( 'stripe_request' );
-
-		$response = $this->mock_gateway->process_payment( $order_id );
-
-		$this->assertEquals( 'success', $response['result'] );
-		$this->assertFalse( $response['payment_needed'] );
-		$this->assertEquals( $order_id, $response['order_id'] );
-		$this->assertMatchesRegularExpression( "/order_id=$order_id/", $response['redirect_url'] );
-		$this->assertMatchesRegularExpression( '/wc_payment_method=stripe/', $response['redirect_url'] );
-		$this->assertMatchesRegularExpression( '/save_payment_method=yes/', $response['redirect_url'] );
-	}
 
 	/**
 	 * Test successful subscription renewal.
@@ -2558,11 +2447,9 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 
 		$mock_payment_method = (object) self::MOCK_CARD_PAYMENT_METHOD_TEMPLATE;
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
 		$_POST = [
-			'payment_method'               => 'stripe',
-			'wc-stripe-payment-method'     => 'pm_mock',
-			'wc-stripe-is-deferred-intent' => '1',
+			'payment_method'           => 'stripe',
+			'wc-stripe-payment-method' => 'pm_mock',
 		];
 
 		$this->mock_gateway->intent_controller
@@ -2633,11 +2520,9 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 
 		$mock_payment_method = (object) self::MOCK_CARD_PAYMENT_METHOD_TEMPLATE;
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
 		$_POST = [
-			'payment_method'               => 'stripe',
-			'wc-stripe-payment-method'     => 'pm_mock',
-			'wc-stripe-is-deferred-intent' => '1',
+			'payment_method'           => 'stripe',
+			'wc-stripe-payment-method' => 'pm_mock',
 		];
 
 		// Mock that we find an existing successful intent on the order
@@ -2724,11 +2609,10 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 			self::MOCK_CARD_PAYMENT_INTENT_TEMPLATE
 		);
 
-		// Set the appropriate POST flag to trigger a deferred intent request
+		// Set the appropriate POST data for the payment request
 		$_POST = [
-			'payment_method'               => 'stripe',
-			'wc-stripe-payment-method'     => 'pm_mock',
-			'wc-stripe-is-deferred-intent' => '1',
+			'payment_method'           => 'stripe',
+			'wc-stripe-payment-method' => 'pm_mock',
 		];
 
 		// Save the failed intent ID to the order
@@ -2784,10 +2668,8 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 
 		$token = $this->set_postvars_for_saved_payment_method();
 
-		// Set the appropriate POST flag to trigger a deferred intent request.
-		$_POST['wc-stripe-is-deferred-intent'] = '1';
-		$_POST['payment_method']               = 'stripe';
-		$_POST['wc-stripe-payment-method']     = 'pm_mock';
+		$_POST['payment_method']           = 'stripe';
+		$_POST['wc-stripe-payment-method'] = 'pm_mock';
 
 		$order             = WC_Helper_Order::create_order();
 		$order_id          = $order->get_id();
@@ -2951,7 +2833,6 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 		$_POST['payment_method']               = 'stripe';
 		$_POST['wc-stripe-confirmation-token'] = $confirmation_token_id;
 		$_POST['wc-stripe-payment-method']     = $payment_method_id;
-		$_POST['wc-stripe-is-deferred-intent'] = '1';
 		$_POST['express_payment_type']         = $express_payment_method;
 
 		$this->mock_gateway->oc_enabled = $optimized_checkout_enabled;
@@ -3112,7 +2993,7 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 		$this->mock_gateway->set_payment_method_title_for_order( $order, WC_Stripe_UPE_Payment_Method_Ideal::STRIPE_ID );
 
 		$this->assertEquals( 'stripe_ideal', $order->get_payment_method() );
-		$this->assertEquals( 'iDEAL', $order->get_payment_method_title() );
+		$this->assertEquals( 'iDEAL | Wero', $order->get_payment_method_title() );
 
 		// iDEAL subscriptions should be set to SEPA as it's the processing payment method of subscription payments for iDEAL.
 		$this->assertEquals( 'stripe_sepa_debit', $mock_subscription_0->get_payment_method() );
@@ -3761,5 +3642,159 @@ class WC_Stripe_UPE_Payment_Gateway_Test extends WC_Mock_Stripe_API_Unit_Test_Ca
 				'expected_not_excluded' => [ 'fpx', 'naver_pay' ],
 			],
 		];
+	}
+
+	/**
+	 * Data provider for test_payment_scripts_enqueues_correct_assets.
+	 *
+	 * @return array[]
+	 */
+	public function provider_payment_scripts_enqueue_scenarios() {
+		/*
+		 * NOTE: The Amazon Pay payment method MUST be enabled for the express payment method to be detected as available.
+		 */
+		return [
+			'Product page with ECE off, no Amazon Pay' => [
+				'page_type'                                => 'product',
+				'express_checkout'                         => 'no',
+				'express_checkout_button_locations'         => [],
+				'upe_checkout_experience_accepted_payments' => [ WC_Stripe_Payment_Methods::CARD ],
+				'amazon_pay_button_locations'               => [],
+				'expected_stripe'                          => true,
+				'expected_upe_classic'                     => false,
+			],
+			'Cart page with ECE off, no Amazon Pay'    => [
+				'page_type'                                => 'cart',
+				'express_checkout'                         => 'no',
+				'express_checkout_button_locations'         => [],
+				'upe_checkout_experience_accepted_payments' => [ WC_Stripe_Payment_Methods::CARD ],
+				'amazon_pay_button_locations'               => [],
+				'expected_stripe'                          => true,
+				'expected_upe_classic'                     => false,
+			],
+			'Cart page with ECE on at cart'            => [
+				'page_type'                                => 'cart',
+				'express_checkout'                         => 'yes',
+				'express_checkout_button_locations'         => [ 'cart' ],
+				'upe_checkout_experience_accepted_payments' => [ WC_Stripe_Payment_Methods::CARD ],
+				'amazon_pay_button_locations'               => [],
+				'expected_stripe'                          => true,
+				'expected_upe_classic'                     => true,
+			],
+			'Cart page with ECE off, Amazon Pay on at cart'    => [
+				'page_type'                                => 'cart',
+				'express_checkout'                         => 'no',
+				'express_checkout_button_locations'         => [],
+				'upe_checkout_experience_accepted_payments' => [ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::AMAZON_PAY ],
+				'amazon_pay_button_locations'               => [ 'cart' ],
+				'expected_stripe'                          => true,
+				'expected_upe_classic'                     => true,
+			],
+			'Product page with ECE on at product'      => [
+				'page_type'                                => 'product',
+				'express_checkout'                         => 'yes',
+				'express_checkout_button_locations'         => [ 'product' ],
+				'upe_checkout_experience_accepted_payments' => [ WC_Stripe_Payment_Methods::CARD ],
+				'amazon_pay_button_locations'               => [],
+				'expected_stripe'                          => true,
+				'expected_upe_classic'                     => true,
+			],
+			'Product page with ECE off, Amazon Pay on at product' => [
+				'page_type'                                => 'product',
+				'express_checkout'                         => 'no',
+				'express_checkout_button_locations'         => [],
+				'upe_checkout_experience_accepted_payments' => [ WC_Stripe_Payment_Methods::CARD, WC_Stripe_Payment_Methods::AMAZON_PAY ],
+				'amazon_pay_button_locations'               => [ 'product' ],
+				'expected_stripe'                          => true,
+				'expected_upe_classic'                     => true,
+			],
+			'Checkout page with ECE off and Amazon Pay off'               => [
+				'page_type'                                => 'checkout',
+				'express_checkout'                         => 'no',
+				'express_checkout_button_locations'         => [],
+				'upe_checkout_experience_accepted_payments' => [ WC_Stripe_Payment_Methods::CARD ],
+				'amazon_pay_button_locations'               => [],
+				'expected_stripe'                          => true,
+				'expected_upe_classic'                     => true,
+			],
+		];
+	}
+
+	/**
+	 * Test that payment_scripts() enqueues the correct assets based on page type and express checkout settings.
+	 *
+	 * @dataProvider provider_payment_scripts_enqueue_scenarios
+	 *
+	 * @param string $page_type                                 Page type: 'product', 'cart', or 'checkout'.
+	 * @param string $express_checkout                          Express checkout enabled: 'yes' or 'no'.
+	 * @param array  $express_checkout_button_locations         Express checkout button locations.
+	 * @param array  $upe_checkout_experience_accepted_payments Enabled UPE payment methods.
+	 * @param array  $amazon_pay_button_locations               Amazon Pay button locations.
+	 * @param bool   $expected_stripe                           Whether 'stripe' script should be enqueued.
+	 * @param bool   $expected_upe_classic                      Whether 'wc-stripe-upe-classic' script should be enqueued.
+	 */
+	public function test_payment_scripts_enqueues_correct_assets( $page_type, $express_checkout, $express_checkout_button_locations, $upe_checkout_experience_accepted_payments, $amazon_pay_button_locations, $expected_stripe, $expected_upe_classic ) {
+		$product            = null;
+		$is_cart_filter     = null;
+		$is_checkout_filter = null;
+
+		if ( 'product' === $page_type ) {
+			$product = WC_Helper_Product::create_simple_product();
+			$this->go_to( get_permalink( $product->get_id() ) );
+		} elseif ( 'cart' === $page_type ) {
+			$is_cart_filter = function () {
+				return true;
+			};
+			add_filter( 'woocommerce_is_cart', $is_cart_filter );
+		} elseif ( 'checkout' === $page_type ) {
+			$is_checkout_filter = function () {
+				return true;
+			};
+			add_filter( 'woocommerce_is_checkout', $is_checkout_filter );
+		}
+
+		$original_settings = WC_Stripe_Helper::get_stripe_settings();
+
+		$stripe_settings                                              = $original_settings;
+		$stripe_settings['enabled']                                   = 'yes';
+		$stripe_settings['express_checkout']                          = $express_checkout;
+		$stripe_settings['express_checkout_button_locations']         = $express_checkout_button_locations;
+		$stripe_settings['upe_checkout_experience_accepted_payments'] = $upe_checkout_experience_accepted_payments;
+		$stripe_settings['amazon_pay_button_locations']               = $amazon_pay_button_locations;
+		WC_Stripe_Helper::update_main_stripe_settings( $stripe_settings );
+
+		try {
+			$gateway          = new WC_Stripe_UPE_Payment_Gateway();
+			$gateway->enabled = 'yes';
+
+			$this->clean_up_scripts(
+				[ 'stripe', 'wc-stripe-upe-classic' ],
+				[ 'stripelink_styles', 'wc-stripe-upe-classic' ]
+			);
+
+			$gateway->payment_scripts();
+
+			$this->assertSame( $expected_stripe, wp_script_is( 'stripe', 'enqueued' ), 'Unexpected enqueue state for stripe JS.' );
+			$this->assertSame( $expected_upe_classic, wp_script_is( 'wc-stripe-upe-classic', 'enqueued' ), 'Unexpected enqueue state for wc-stripe-upe-classic.' );
+		} finally {
+			WC_Stripe_Helper::update_main_stripe_settings( $original_settings );
+
+			$this->clean_up_scripts(
+				[ 'stripe', 'wc-stripe-upe-classic' ],
+				[ 'stripelink_styles', 'wc-stripe-upe-classic' ]
+			);
+
+			if ( $product ) {
+				$product->delete( true );
+			}
+
+			if ( $is_checkout_filter ) {
+				remove_filter( 'woocommerce_is_checkout', $is_checkout_filter );
+			}
+
+			if ( $is_cart_filter ) {
+				remove_filter( 'woocommerce_is_cart', $is_cart_filter );
+			}
+		}
 	}
 }
