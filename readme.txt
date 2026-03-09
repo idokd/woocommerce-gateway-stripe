@@ -145,7 +145,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 10.5.0 - xxxx-xx-xx =
+= 10.5.0 - 2026-03-09 =
 
 **Important Fixes and Updates**
 * Update - Update Stripe API to 2025-09-30.clover and dynamic Javascript to Clover
