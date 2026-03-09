@@ -191,5 +191,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Fix script dependencies and script cache versioning for classic checkout
 * Fix - Remove transient style caching in favor of a simple in-memory frontend cache
 * Fix - Improve Stripe element appearance on non-checkout pages
+* Fix - Remove WooCommerce session creation on product page load to improve cacheability
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
