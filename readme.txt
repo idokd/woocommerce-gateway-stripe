@@ -145,6 +145,10 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 10.5.1 - xxxx-xx-xx =
+**Important Fixes and Updates**
+* Fix - Reinstate custom appearance logic
+
 = 10.5.0 - 2026-03-09 =
 
 **Important Fixes and Updates**
