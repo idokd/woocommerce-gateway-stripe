@@ -149,6 +149,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 **Important Fixes and Updates**
 * Fix - Reinstate custom appearance logic
 * Fix - Refactor some Amazon Pay helpers to prevent an infinite loop
+* Fix - Clear customer cache after saving a new payment method so the Stripe payment method list has correct data
 
 = 10.5.0 - 2026-03-09 =
 
