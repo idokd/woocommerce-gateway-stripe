@@ -148,6 +148,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 = 10.5.1 - xxxx-xx-xx =
 **Important Fixes and Updates**
 * Fix - Reinstate custom appearance logic
+* Fix - Refactor some Amazon Pay helpers to prevent an infinite loop
 
 = 10.5.0 - 2026-03-09 =
 
