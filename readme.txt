@@ -145,6 +145,9 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 10.5.2 - xxxx-xx-xx =
+* Fix - Ensure that we enqueue all needed scripts on payment pages
+
 = 10.5.1 - 2026-03-11 =
 **Important Fixes and Updates**
 * Fix - Reinstate custom appearance logic
