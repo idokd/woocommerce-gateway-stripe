@@ -145,6 +145,9 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
+= 10.5.3 - xxxx-xx-xx =
+* Fix - Restore default layout when Optimized Checkout is disabled
+
 = 10.5.2 - 2026-03-13 =
 * Fix - Ensure that we enqueue all needed scripts on payment pages
 
