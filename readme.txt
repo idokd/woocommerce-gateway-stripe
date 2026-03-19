@@ -146,6 +146,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 == Changelog ==
 
 = 10.6.0 - xxxx-xx-xx =
+* Add - New promotional banner to highlight the Stripe Tax extension for OCS-enabled merchants
 * Add - Include specific information on converted currency for adaptive pricing in the order received page and order details page
 * Add - Support express checkout for free trial subscription products that require shipping
 * Fix - Re-block UI during express checkout post-modal processing so shoppers see a loading state while the checkout API call completes

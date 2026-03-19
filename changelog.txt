@@ -161,6 +161,7 @@
 * Fix - Ensure state and postal code are optional in express checkout for Gulf countries (UAE, Bahrain, Kuwait, Oman, Qatar)
 * Dev - Removes the `_wcstripe_feature_upe` feature flag and the related method from the `WC_Stripe_Feature_Flags` class
 * Dev - Fixes some incorrect subscriptions support implementations for payment methods
+* Add - New promotional banner to highlight the Stripe Tax extension for OCS-enabled merchants
 * Fix - Ensure correct express checkout prices in block cart and checkout with non-default decimal configuration
 * Fix - Disable express checkout when Amazon Pay is disabled and the only method
 * Fix - Don't allow WP-Cron jobs to detach payment methods on staging sites
