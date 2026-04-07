@@ -170,6 +170,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Update - Disable the Optimized Checkout Suite in the "Add Payment Method" and "Change Subscription Payment Method" screens
 * Dev - Remove unused frontend code: legacy blocks payment request API helpers, related normalize utilities, and unused Stripe icon component
 * Add - Allow additional font domains to be included in Stripe fonts
+* Dev - Add incremental inventory sync for Agentic Commerce: tracks stock changes via WooCommerce hooks and uploads a minimal inventory_feed CSV to Stripe one minute after the first change
 * Dev - Skip registering Stripe email classes when WooCommerce email class is not loaded
 * Fix - Add order and payment method validation to prevent errors
 * Dev - Remove @woocommerce/currency dev dependency to resolve locutus CVE-2026-32304 (GHSA-vh9h-29pq-r5m8)
