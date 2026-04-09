@@ -206,6 +206,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Add - Add Ajax endpoint to update line items in a checkout session
 * Tweak - Hide the Adaptive Pricing currency selector from classic checkout when a saved payment method is selected
 * Add - Allow customers to save payment methods during checkout with adaptive pricing
+* Fix - Only collect and send payer phone in Checkout Sessions when the WooCommerce phone field is required
 * Fix - Restrict Checkout Session saved payment method options to logged-in customers so guest checkout session creation succeeds
 * Add - Add an admin notice and one-click action to move Stripe payment methods to the top of WooCommerce payment gateway order for Optimized Checkout
 
