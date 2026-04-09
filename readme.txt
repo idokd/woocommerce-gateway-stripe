@@ -149,6 +149,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Dev - Autoload all Agentic Commerce classes via Composer classmap, removing manual require_once calls
 * Update - Show "Payment Options" as the Optimized Checkout title on classic checkout and "Payment Methods" on Blocks checkout instead of "Stripe"
 * Dev - Separate Agentic Commerce merchant-controlled is_enabled setting from the developer feature flag
+* Fix - Move test mode instructions above the Adaptive Pricing currency selector in classic checkout
 * Fix - Render the Adaptive Pricing currency selector immediately above the payment element in classic checkout
 * Update - Show Express Checkout on block checkout when Adaptive Pricing is enabled
 * Fix - Fix checkout session creation for guest users
