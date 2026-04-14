@@ -176,6 +176,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Add - Support express checkout for free trial subscription products that require shipping
 * Fix - Normalize express checkout button spacing on the block cart page in Safari
 * Fix - Re-block UI during express checkout post-modal processing so shoppers see a loading state while the checkout API call completes
+* Dev - Add product deletion tracking to Agentic Commerce inventory sync: product deletes and trash events are batched and uploaded to Stripe as a product_catalog_feed with delete:true
 * Dev - Rename PHPUnit test files and directories to match the WordPress kebab-case naming convention used in includes/
 * Add - Process payment with adaptive pricing in the blocks checkout
 * Update - Express Checkout button logging will only occur when verbose debug mode is enabled
