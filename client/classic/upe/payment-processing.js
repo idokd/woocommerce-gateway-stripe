@@ -17,6 +17,7 @@ import {
 	getAdditionalSetupIntentData,
 	validateBlikCode,
 	getExcludedPaymentMethodTypes,
+	getUserDataForCheckoutSession,
 } from '../../stripe-utils';
 import { getFontRulesFromPage, sampleFontFamily } from '../../styles/upe';
 import { getPaymentMethodRadioStyles } from '../../styles/upe/utils';
@@ -333,7 +334,6 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 				adaptivePricing: {
 					allowed: true,
 				},
-				...getDefaultValues( true ),
 			} );
 
 			shouldLoadStripeElements = false;
@@ -438,6 +438,15 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 			paymentElementOptions
 		);
 	} else {
+		const upeSettings = getUpeSettings();
+		// createPaymentElement() (Checkout Sessions API) does not accept terms.link.
+		if ( upeSettings.terms ) {
+			delete upeSettings.terms.link;
+		}
+		paymentElementOptions = {
+			...paymentElementOptions,
+			...upeSettings,
+		};
 		createdStripePaymentElement = elements.createPaymentElement(
 			paymentElementOptions
 		);
@@ -861,6 +870,7 @@ export const processPayment = (
 				}
 
 				const { actions } = loadActionsResult;
+				const session = await actions.getSession();
 
 				// Get the session ID stored during mount.
 				const sessionId =
@@ -908,20 +918,19 @@ export const processPayment = (
 					return;
 				}
 
-				const shouldSavePaymentMethod = jQueryForm
-					.find( '#wc-stripe-new-payment-method' )
-					.is( ':checked' );
-
 				// Confirm payment with the order-received page as return URL
 				// so redirect-based methods (iDEAL, Bancontact, etc.) return
 				// the customer to the thank-you page instead of checkout.
 				const confirmArgs = {
+					...getUserDataForCheckoutSession( session ),
 					returnUrl: checkoutResponse.redirect,
 					redirect: 'if_required',
 				};
 
 				if ( getStripeServerData()?.isLoggedIn ) {
-					confirmArgs.savePaymentMethod = shouldSavePaymentMethod;
+					confirmArgs.savePaymentMethod = jQueryForm
+						.find( '#wc-stripe-new-payment-method' )
+						.is( ':checked' );
 				}
 
 				const confirmResult = await actions.confirm( confirmArgs );

@@ -215,6 +215,7 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix - Only collect and send payer phone in Checkout Sessions when the WooCommerce phone field is required
 * Fix - Restrict Checkout Session saved payment method options to logged-in customers so guest checkout session creation succeeds
 * Add - Add an admin notice and one-click action to move Stripe payment methods to the top of WooCommerce payment gateway order for Optimized Checkout
+* Fix - Confirm checkout session with user data in classic checkout for guest user
 * Add - Handle redirect payment flow in classic checkout for Checkout Sessions
 * Fix: Improve UX for the "Stripe first method" notice for Optimized Checkout
 
