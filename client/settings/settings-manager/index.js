@@ -17,7 +17,11 @@ import { getPromotionalBannerType } from 'wcstripe/settings/payment-settings/pro
 import {
 	BNPL_PROMOTION_BANNER,
 	OC_PROMOTION_BANNER,
+	STRIPE_TAX_BANNER,
 } from 'wcstripe/settings/payment-settings/constants';
+import ExitSurveyModal, {
+	isCooldownActive,
+} from 'wcstripe/components/exit-survey-modal';
 
 const StyledTabPanel = styled( TabPanel )`
 	.components-tab-panel__tabs {
@@ -57,6 +61,13 @@ const SettingsManager = () => {
 		initialBannerState = true;
 	}
 	if (
+		promotionalBannerType === STRIPE_TAX_BANNER &&
+		// eslint-disable-next-line camelcase
+		wc_stripe_settings_params?.show_stripe_tax_banner === '1'
+	) {
+		initialBannerState = true;
+	}
+	if (
 		promotionalBannerType === OC_PROMOTION_BANNER &&
 		// eslint-disable-next-line camelcase
 		wc_stripe_settings_params?.show_oc_promotional_banner === '1'
@@ -72,7 +83,23 @@ const SettingsManager = () => {
 		}
 	}, [ isLoading, settings ] );
 
+	const [ showExitSurvey, setShowExitSurvey ] = useState( false );
+
 	const onSettingsSave = () => {
+		// Show exit survey if Stripe was just disabled.
+		if (
+			initialSettings.is_stripe_enabled &&
+			! settings.is_stripe_enabled &&
+			// eslint-disable-next-line camelcase
+			typeof wc_stripe_settings_params !== 'undefined' &&
+			! isCooldownActive(
+				// eslint-disable-next-line camelcase
+				wc_stripe_settings_params.exit_survey_last_shown
+			)
+		) {
+			setShowExitSurvey( true );
+		}
+
 		setInitialSettings( settings );
 	};
 
@@ -92,6 +119,16 @@ const SettingsManager = () => {
 
 	return (
 		<SettingsLayout>
+			{ showExitSurvey && (
+				<ExitSurveyModal
+					trigger="settings_disable"
+					surveyParams={
+						// eslint-disable-next-line camelcase
+						wc_stripe_settings_params
+					}
+					onRequestClose={ () => setShowExitSurvey( false ) }
+				/>
+			) }
 			<StyledTabPanel
 				className="wc-stripe-account-settings-panel"
 				initialTabName={ panel === 'settings' ? 'settings' : 'methods' }
