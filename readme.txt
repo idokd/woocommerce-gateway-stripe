@@ -35,6 +35,8 @@ Stripe is available for store owners and merchants in [46 countries worldwide](h
 
 The following items note specific versions that include important changes, features, or deprecations.
 
+* 10.6.0
+   - Adaptive Pricing available
 * 10.4.0
    - Optimized Checkout Suite no longer enabled by default for new installs
    - Removed the main Payment Request Buttons backend class, WC_Stripe_Payment_Request, which was deprecated in 10.2.0
@@ -144,6 +146,10 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 6. Get started with no additional hardware using Tap to Pay on iPhone, or Tap to Pay on Android.
 
 == Changelog ==
+
+= 10.6.1 - xxxx-xx-xx =
+
+* Fix - Fix Optimized Checkout Suite bugs that could result in duplicate subscription charges and generic payment methods names
 
 = 10.6.0 - 2026-04-20 =
 
