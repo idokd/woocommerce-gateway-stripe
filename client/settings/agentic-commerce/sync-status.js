@@ -1,10 +1,11 @@
-/* global wc_stripe_settings_params */
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { Card, CardTitle, Actions } from './styled';
 import apiFetch from '@wordpress/api-fetch';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { Button, Notice } from '@wordpress/components';
+import { dispatch } from '@wordpress/data';
+import { useTestMode } from 'wcstripe/data';
 
 const StatusBadge = styled.span`
 	display: inline-block;
@@ -12,7 +13,6 @@ const StatusBadge = styled.span`
 	border-radius: 3px;
 	font-size: 12px;
 	font-weight: 600;
-	margin-bottom: 12px;
 
 	&.success {
 		background: #d4edda;
@@ -57,12 +57,14 @@ const DetailsTable = styled.table`
 const HistoryTable = styled.table`
 	width: 100%;
 	border-collapse: collapse;
+	table-layout: fixed;
 
 	th,
 	td {
 		text-align: left;
 		padding: 8px;
 		border-bottom: 1px solid #f0f0f0;
+		overflow: hidden;
 	}
 
 	th {
@@ -76,6 +78,45 @@ const HistoryTable = styled.table`
 
 	code {
 		font-size: 11px;
+	}
+
+	.col-timestamp {
+		width: 170px;
+		white-space: nowrap;
+	}
+
+	.col-products {
+		width: 90px;
+		text-align: center;
+		white-space: nowrap;
+	}
+
+	.col-status {
+		width: 160px;
+		white-space: nowrap;
+	}
+
+	.col-import-id {
+		width: auto;
+	}
+
+	.col-import-id code {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+	}
+
+	.col-import-id .id-start {
+		flex: 0 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.col-import-id .id-end {
+		flex: 0 0 auto;
+		white-space: nowrap;
 	}
 `;
 
@@ -160,17 +201,16 @@ const humanTimeDiff = ( timestamp ) => {
 	);
 };
 
-// A scheduled sync is treated as overdue once it's more than this many seconds
-// past its expected run time. Chosen well above the 15-minute sync interval so
-// a single slow run doesn't falsely trigger the warning.
-const OVERDUE_WARNING_THRESHOLD_SECONDS = 10 * 60;
-
 const AgenticCommerceSyncStatus = () => {
 	const [ data, setData ] = useState( null );
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ isSyncing, setIsSyncing ] = useState( false );
-	const [ notice, setNotice ] = useState( null );
 	const [ hasError, setHasError ] = useState( false );
+
+	const [ isTestMode ] = useTestMode();
+	const importSetsUrl = isTestMode
+		? 'https://dashboard.stripe.com/test/data-management/import-sets'
+		: 'https://dashboard.stripe.com/data-management/import-sets';
 
 	const fetchStatus = useCallback( async () => {
 		setIsLoading( true );
@@ -182,15 +222,12 @@ const AgenticCommerceSyncStatus = () => {
 			setData( result );
 		} catch ( err ) {
 			setHasError( true );
-			setNotice( {
-				status: 'error',
-				message:
-					err?.message ??
-					__(
-						'Failed to load sync status.',
-						'woocommerce-gateway-stripe'
-					),
-			} );
+			dispatch( 'core/notices' ).createErrorNotice(
+				__(
+					'Failed to load sync status.',
+					'woocommerce-gateway-stripe'
+				)
+			);
 		} finally {
 			setIsLoading( false );
 		}
@@ -202,57 +239,31 @@ const AgenticCommerceSyncStatus = () => {
 
 	const handleSync = async () => {
 		setIsSyncing( true );
-		setNotice( null );
 		try {
 			await apiFetch( {
 				path: '/wc/v3/wc_stripe/agentic-commerce/sync',
 				method: 'POST',
 			} );
-			setNotice( {
-				status: 'success',
-				message: __(
+			dispatch( 'core/notices' ).createSuccessNotice(
+				__(
 					'Sync triggered successfully.',
 					'woocommerce-gateway-stripe'
-				),
-			} );
+				)
+			);
 			await fetchStatus();
 		} catch ( err ) {
-			setNotice( {
-				status: 'error',
-				message:
-					err?.message ??
-					__(
-						'Sync failed. Check the WooCommerce logs for details.',
-						'woocommerce-gateway-stripe'
-					),
-			} );
+			dispatch( 'core/notices' ).createErrorNotice(
+				__(
+					'Sync failed. Check the WooCommerce logs for details.',
+					'woocommerce-gateway-stripe'
+				)
+			);
 		} finally {
 			setIsSyncing( false );
 		}
 	};
 
 	const { last_sync: lastSync, history, next_sync: nextSync } = data ?? {};
-
-	const importSetsUrl =
-		wc_stripe_settings_params?.agentic_commerce_import_sets_url ?? // eslint-disable-line camelcase
-		'https://dashboard.stripe.com/data-management/import-sets';
-	const logsUrl =
-		wc_stripe_settings_params?.agentic_commerce_logs_url ?? // eslint-disable-line camelcase
-		'/wp-admin/admin.php?page=wc-status&tab=logs';
-
-	const secondsUntilNextSync =
-		typeof nextSync === 'number'
-			? nextSync - Math.floor( Date.now() / 1000 )
-			: null;
-
-	const isNextSyncOverdue =
-		secondsUntilNextSync !== null &&
-		secondsUntilNextSync < -OVERDUE_WARNING_THRESHOLD_SECONDS;
-
-	const overdueMinutes =
-		secondsUntilNextSync !== null
-			? Math.floor( Math.abs( secondsUntilNextSync ) / 60 )
-			: 0;
 
 	const computeNextSyncLabel = () => {
 		if ( ! nextSync ) return null;
@@ -278,9 +289,9 @@ const AgenticCommerceSyncStatus = () => {
 
 	return (
 		<>
-			<p className="description">
+			<p className="description" style={ { marginTop: '16px' } }>
 				{ __(
-					'Monitors the product feed sync status for the Agentic Commerce integration.',
+					'Monitors the product feed sync status for the agentic commerce integration.',
 					'woocommerce-gateway-stripe'
 				) }{ ' ' }
 				<a
@@ -294,31 +305,6 @@ const AgenticCommerceSyncStatus = () => {
 					) }
 				</a>
 			</p>
-
-			{ notice && (
-				<Notice
-					status={ notice.status }
-					onRemove={ () => setNotice( null ) }
-					isDismissible
-				>
-					{ notice.message }
-				</Notice>
-			) }
-
-			{ isNextSyncOverdue && (
-				<Notice status="warning" isDismissible={ false }>
-					{ sprintf(
-						/* translators: %d: number of minutes the scheduled sync is overdue. */
-						_n(
-							'The scheduled sync is overdue by %d minute. Check that Action Scheduler is running on this site.',
-							'The scheduled sync is overdue by %d minutes. Check that Action Scheduler is running on this site.',
-							overdueMinutes,
-							'woocommerce-gateway-stripe'
-						),
-						overdueMinutes
-					) }
-				</Notice>
-			) }
 
 			<Card>
 				<CardTitle>
@@ -440,7 +426,10 @@ const AgenticCommerceSyncStatus = () => {
 							? __( 'Syncing…', 'woocommerce-gateway-stripe' )
 							: __( 'Sync Now', 'woocommerce-gateway-stripe' ) }
 					</Button>
-					<Button variant="secondary" href={ logsUrl }>
+					<Button
+						variant="secondary"
+						href="/wp-admin/admin.php?page=wc-status&tab=logs"
+					>
 						{ __( 'View Logs', 'woocommerce-gateway-stripe' ) }
 					</Button>
 				</Actions>
@@ -466,25 +455,25 @@ const AgenticCommerceSyncStatus = () => {
 					<HistoryTable>
 						<thead>
 							<tr>
-								<th>
+								<th className="col-timestamp">
 									{ __(
 										'Timestamp',
 										'woocommerce-gateway-stripe'
 									) }
 								</th>
-								<th>
+								<th className="col-products">
 									{ __(
 										'Products',
 										'woocommerce-gateway-stripe'
 									) }
 								</th>
-								<th>
+								<th className="col-status">
 									{ __(
 										'Status',
 										'woocommerce-gateway-stripe'
 									) }
 								</th>
-								<th>
+								<th className="col-import-id">
 									{ __(
 										'Import ID',
 										'woocommerce-gateway-stripe'
@@ -495,7 +484,7 @@ const AgenticCommerceSyncStatus = () => {
 						<tbody>
 							{ history.map( ( entry, i ) => (
 								<tr key={ i }>
-									<td>
+									<td className="col-timestamp">
 										{ entry.timestamp
 											? new Date(
 													entry.timestamp * 1000
@@ -508,12 +497,12 @@ const AgenticCommerceSyncStatus = () => {
 											  } )
 											: '—' }
 									</td>
-									<td>
+									<td className="col-products">
 										{ entry.products !== null
 											? entry.products.toLocaleString()
 											: '—' }
 									</td>
-									<td>
+									<td className="col-status">
 										<SyncStatusBadge
 											status={ entry.status }
 										/>
@@ -524,9 +513,21 @@ const AgenticCommerceSyncStatus = () => {
 											</span>
 										) }
 									</td>
-									<td>
+									<td className="col-import-id">
 										{ entry.import_set_id ? (
-											<code>{ entry.import_set_id }</code>
+											<code title={ entry.import_set_id }>
+												<span className="id-start">
+													{ entry.import_set_id.slice(
+														0,
+														-6
+													) }
+												</span>
+												<span className="id-end">
+													{ entry.import_set_id.slice(
+														-6
+													) }
+												</span>
+											</code>
 										) : (
 											'—'
 										) }

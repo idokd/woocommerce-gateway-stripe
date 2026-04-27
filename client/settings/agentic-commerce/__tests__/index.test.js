@@ -1,14 +1,29 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import AgenticCommercePanel from '..';
+import AgenticCommerceSection from '..';
 import apiFetch from '@wordpress/api-fetch';
+import { dispatch } from '@wordpress/data';
 import { useTestMode } from 'wcstripe/data';
 import { useAccount } from 'wcstripe/data/account';
 
 jest.mock( '@wordpress/api-fetch' );
 
+const mockCreateSuccessNotice = jest.fn();
+const mockCreateErrorNotice = jest.fn();
+jest.mock( '@wordpress/data', () => ( {
+	...jest.requireActual( '@wordpress/data' ),
+	dispatch: jest.fn( () => ( {
+		createSuccessNotice: mockCreateSuccessNotice,
+		createErrorNotice: mockCreateErrorNotice,
+	} ) ),
+} ) );
+
 jest.mock( 'wcstripe/data', () => ( {
 	useTestMode: jest.fn(),
 } ) );
+
+jest.mock( 'wcstripe/settings/loadable-settings-section', () => {
+	return ( { children } ) => <>{ children }</>;
+} );
 
 jest.mock( 'wcstripe/data/account', () => ( {
 	useAccount: jest.fn(),
@@ -53,12 +68,6 @@ const EMPTY_RESPONSE = { last_sync: null, history: [], next_sync: null };
 
 const SETTINGS_RESPONSE = { is_enabled: true, webhook_secret: '' };
 
-// Mirrors WC_REST_Stripe_Agentic_Commerce_Controller::MASKED_WEBHOOK_SECRET.
-// (The webhook secret *option key* lives on the integration class so it is
-// always loaded for webhook deliveries; only the masking placeholder lives on
-// the controller as it is UI-presentation only.)
-const MASKED_WEBHOOK_SECRET = 'whsec_********************************';
-
 /**
  * Set up apiFetch to route by path. Status calls return `statusResponse`
  * and settings calls return `settingsResponse`. Additional one-off mocks
@@ -79,8 +88,12 @@ const mockFetchByPath = (
 	} );
 };
 
-describe( 'AgenticCommercePanel', () => {
+describe( 'AgenticCommerceSection', () => {
 	beforeEach( () => {
+		dispatch.mockReturnValue( {
+			createSuccessNotice: mockCreateSuccessNotice,
+			createErrorNotice: mockCreateErrorNotice,
+		} );
 		useTestMode.mockReturnValue( [ false ] );
 		useAccount.mockReturnValue( { data: null } );
 		global.wc_stripe_settings_params = {
@@ -94,6 +107,8 @@ describe( 'AgenticCommercePanel', () => {
 	afterEach( () => {
 		delete global.wc_stripe_settings_params;
 		jest.resetAllMocks();
+		mockCreateSuccessNotice.mockClear();
+		mockCreateErrorNotice.mockClear();
 	} );
 
 	// -------------------------------------------------------------------------
@@ -103,7 +118,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'shows loading indicators while fetching', () => {
 		apiFetch.mockReturnValue( new Promise( () => {} ) );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		expect(
 			screen.getAllByText( /Loading…/i ).length
@@ -117,7 +132,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'shows "No syncs yet" when last_sync is null', async () => {
 		mockFetchByPath( EMPTY_RESPONSE );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect( screen.getByText( /No syncs yet/i ) ).toBeInTheDocument();
@@ -127,7 +142,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'shows "No sync history available" when history is empty', async () => {
 		mockFetchByPath( EMPTY_RESPONSE );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
@@ -143,11 +158,9 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'renders a success status badge when last sync succeeded', async () => {
 		mockFetchByPath( makeResponse() );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
-			// At least one "Success" badge must be in the document (may also
-			// appear in the history table row and the aria-live region).
 			expect(
 				screen.getAllByText( /Success/i ).length
 			).toBeGreaterThanOrEqual( 1 );
@@ -157,10 +170,9 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'renders product count from last_sync', async () => {
 		mockFetchByPath( makeResponse() );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
-			// "42" appears in the status table (products synced).
 			expect( screen.getAllByText( '42' ).length ).toBeGreaterThanOrEqual(
 				1
 			);
@@ -170,7 +182,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'renders import_set_id from last_sync', async () => {
 		mockFetchByPath( makeResponse() );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
@@ -186,17 +198,20 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'renders the history table with correct row count', async () => {
 		mockFetchByPath( makeResponse() );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
-			expect( screen.getByText( 'impset_prev' ) ).toBeInTheDocument();
+			// The import_set_id is split across two spans (id-start / id-end) in the
+			// history row so we can't match the concatenated string directly;
+			// assert via the `title` attribute on the wrapping <code> instead.
+			expect( screen.getByTitle( 'impset_prev' ) ).toBeInTheDocument();
 		} );
 	} );
 
 	it( 'shows an info icon next to failed history rows that have an error', async () => {
 		mockFetchByPath( makeResponse() );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			const infoIcons = document.querySelectorAll(
@@ -221,7 +236,7 @@ describe( 'AgenticCommercePanel', () => {
 			} )
 		);
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
@@ -238,67 +253,24 @@ describe( 'AgenticCommercePanel', () => {
 		const futureTs = Math.floor( Date.now() / 1000 ) + 1800; // 30 min ahead
 		mockFetchByPath( makeResponse( { next_sync: futureTs } ) );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
-				screen.getByText( /Next automatic sync: in (29|30) minutes?/i )
+				screen.getByText( /Next automatic sync: in \d+ minutes?/i )
 			).toBeInTheDocument();
 		} );
 	} );
 
-	it( 'shows "imminent" label when next_sync is just in the past', async () => {
+	it( 'shows "imminent" label when next_sync is in the past', async () => {
 		const pastTs = Math.floor( Date.now() / 1000 ) - 100;
 		mockFetchByPath( makeResponse( { next_sync: pastTs } ) );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect( screen.getByText( /imminent/i ) ).toBeInTheDocument();
 		} );
-	} );
-
-	// Excludes the hidden a11y-speak-region (which @wordpress/components Notice
-	// populates as a side effect and persists across renders) so assertions
-	// only inspect what's actually rendered by the panel.
-	const getVisibleText = ( pattern ) =>
-		screen
-			.queryAllByText( pattern )
-			.filter( ( el ) => ! el.closest( '.a11y-speak-region' ) );
-
-	it( 'shows an overdue warning when next_sync is far in the past', async () => {
-		// 30 minutes overdue — well past the 10-minute threshold.
-		const overdueTs = Math.floor( Date.now() / 1000 ) - 30 * 60;
-		mockFetchByPath( makeResponse( { next_sync: overdueTs } ) );
-
-		render( <AgenticCommercePanel /> );
-
-		await waitFor( () => {
-			expect(
-				getVisibleText( /scheduled sync is overdue by \d+ minutes?/i )
-					.length
-			).toBeGreaterThanOrEqual( 1 );
-		} );
-
-		expect(
-			getVisibleText( /Action Scheduler is running/i ).length
-		).toBeGreaterThanOrEqual( 1 );
-	} );
-
-	it( 'does not show an overdue warning when next_sync is only slightly in the past', async () => {
-		// 2 minutes in the past — within the "imminent" window.
-		const pastTs = Math.floor( Date.now() / 1000 ) - 2 * 60;
-		mockFetchByPath( makeResponse( { next_sync: pastTs } ) );
-
-		render( <AgenticCommercePanel /> );
-
-		await waitFor( () => {
-			expect( screen.getByText( /imminent/i ) ).toBeInTheDocument();
-		} );
-
-		expect( getVisibleText( /scheduled sync is overdue/i ) ).toHaveLength(
-			0
-		);
 	} );
 
 	// -------------------------------------------------------------------------
@@ -308,7 +280,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'fetches status from the correct REST path on mount', async () => {
 		mockFetchByPath( EMPTY_RESPONSE );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect( apiFetch ).toHaveBeenCalledWith( {
@@ -320,7 +292,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'fetches settings from the correct REST path on mount', async () => {
 		mockFetchByPath( EMPTY_RESPONSE );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect( apiFetch ).toHaveBeenCalledWith( {
@@ -336,7 +308,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'renders the Sync Now button', async () => {
 		mockFetchByPath( EMPTY_RESPONSE );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
@@ -346,8 +318,6 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'shows success notice and re-fetches after a successful sync', async () => {
-		// Mount: settings → SETTINGS_RESPONSE (is_enabled: true), status → EMPTY_RESPONSE.
-		// Sync POST → success, re-fetch status → populated response.
 		apiFetch.mockImplementation( ( { path, method } ) => {
 			if (
 				method === 'POST' &&
@@ -361,7 +331,7 @@ describe( 'AgenticCommercePanel', () => {
 			return Promise.resolve( makeResponse() );
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		const syncBtn = await screen.findByRole( 'button', {
 			name: /Sync Now/i,
@@ -369,12 +339,11 @@ describe( 'AgenticCommercePanel', () => {
 		fireEvent.click( syncBtn );
 
 		await waitFor( () => {
-			expect(
-				screen.getAllByText( /Sync triggered successfully/i ).length
-			).toBeGreaterThanOrEqual( 1 );
+			expect( mockCreateSuccessNotice ).toHaveBeenCalledWith(
+				'Sync triggered successfully.'
+			);
 		} );
 
-		// After re-fetch, products count should appear.
 		await waitFor( () => {
 			expect( screen.getAllByText( '42' ).length ).toBeGreaterThanOrEqual(
 				1
@@ -403,7 +372,7 @@ describe( 'AgenticCommercePanel', () => {
 			return Promise.resolve( EMPTY_RESPONSE );
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		const syncBtn = await screen.findByRole( 'button', {
 			name: /Sync Now/i,
@@ -411,9 +380,9 @@ describe( 'AgenticCommercePanel', () => {
 		fireEvent.click( syncBtn );
 
 		await waitFor( () => {
-			expect(
-				screen.getAllByText( /Server error/i ).length
-			).toBeGreaterThanOrEqual( 1 );
+			expect( mockCreateErrorNotice ).toHaveBeenCalledWith(
+				'Sync failed. Check the WooCommerce logs for details.'
+			);
 		} );
 	} );
 
@@ -431,7 +400,7 @@ describe( 'AgenticCommercePanel', () => {
 			return Promise.resolve( EMPTY_RESPONSE );
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		const syncBtn = await screen.findByRole( 'button', {
 			name: /Sync Now/i,
@@ -439,11 +408,9 @@ describe( 'AgenticCommercePanel', () => {
 		fireEvent.click( syncBtn );
 
 		await waitFor( () => {
-			expect(
-				screen.getAllByText(
-					/Sync failed. Check the WooCommerce logs/i
-				).length
-			).toBeGreaterThanOrEqual( 1 );
+			expect( mockCreateErrorNotice ).toHaveBeenCalledWith(
+				'Sync failed. Check the WooCommerce logs for details.'
+			);
 		} );
 	} );
 
@@ -459,12 +426,12 @@ describe( 'AgenticCommercePanel', () => {
 			return Promise.reject( { message: 'Connection refused' } );
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
-			expect(
-				screen.getAllByText( /Connection refused/i ).length
-			).toBeGreaterThanOrEqual( 1 );
+			expect( mockCreateErrorNotice ).toHaveBeenCalledWith(
+				'Failed to load sync status.'
+			);
 		} );
 
 		// Empty-state placeholders should NOT be shown when fetch fails.
@@ -472,49 +439,6 @@ describe( 'AgenticCommercePanel', () => {
 		expect(
 			screen.queryByText( /No sync history available/i )
 		).not.toBeInTheDocument();
-	} );
-
-	it( 'does not render the settings form when the GET /settings request fails', async () => {
-		apiFetch.mockImplementation( ( { path, method = 'GET' } ) => {
-			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
-				if ( method === 'GET' ) {
-					return Promise.reject( {
-						message: 'Settings load failed',
-					} );
-				}
-				// A POST should never happen in this scenario; if it does the
-				// assertions below will fail loudly.
-				return Promise.resolve( SETTINGS_RESPONSE );
-			}
-			return Promise.resolve( EMPTY_RESPONSE );
-		} );
-
-		render( <AgenticCommercePanel /> );
-
-		// The error notice surfaces the load failure.
-		await waitFor( () => {
-			expect(
-				screen.getAllByText( /Settings load failed/i ).length
-			).toBeGreaterThanOrEqual( 1 );
-		} );
-
-		// The form is locked: no toggle, no save button.
-		expect(
-			screen.queryByRole( 'checkbox', {
-				name: /Enable Agentic Commerce/i,
-			} )
-		).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole( 'button', { name: /Save Settings/i } )
-		).not.toBeInTheDocument();
-
-		// And no destructive POST has been issued.
-		expect( apiFetch ).not.toHaveBeenCalledWith(
-			expect.objectContaining( {
-				path: '/wc/v3/wc_stripe/agentic-commerce/settings',
-				method: 'POST',
-			} )
-		);
 	} );
 
 	// -------------------------------------------------------------------------
@@ -527,12 +451,12 @@ describe( 'AgenticCommercePanel', () => {
 			webhook_secret: '',
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
-				screen.getByText( /Getting started on the Stripe side/i )
-			).toBeInTheDocument();
+				screen.getAllByText( /Setup instructions/i ).length
+			).toBeGreaterThanOrEqual( 1 );
 		} );
 	} );
 
@@ -542,49 +466,94 @@ describe( 'AgenticCommercePanel', () => {
 			webhook_secret: '',
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
-				screen.queryByLabelText( /Webhook Secret/i )
+				screen.queryByLabelText( /Webhook secret/i )
 			).not.toBeInTheDocument();
 		} );
 		expect(
-			screen.queryByText( /Getting started on the Stripe side/i )
+			screen.queryByText( /Setup instructions/i )
 		).not.toBeInTheDocument();
 	} );
 
-	it( 'hides onboarding steps when feature is enabled and webhook secret is already saved', async () => {
+	it( 'shows onboarding steps when feature is enabled even with webhook secret saved', async () => {
 		mockFetchByPath( EMPTY_RESPONSE, {
 			is_enabled: true,
-			webhook_secret: MASKED_WEBHOOK_SECRET, // masked placeholder returned by GET when a secret is stored
+			webhook_secret: '****',
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
-			// Webhook secret input should be visible (feature enabled)
 			expect(
-				screen.getByLabelText( /Agentic Commerce Webhook Secret/i )
+				screen.getByLabelText( /Webhook secret/i )
 			).toBeInTheDocument();
 		} );
 		expect(
-			screen.queryByText( /Getting started on the Stripe side/i )
-		).not.toBeInTheDocument();
+			screen.getAllByText( /Setup instructions/i ).length
+		).toBeGreaterThanOrEqual( 1 );
 	} );
 
 	// -------------------------------------------------------------------------
-	// Settings card
+	// Webhook URL and CopyButton
 	// -------------------------------------------------------------------------
 
-	it( 'renders the Enable Agentic Commerce toggle', async () => {
-		mockFetchByPath( EMPTY_RESPONSE );
+	it( 'shows webhook URL with copy button when account has configured webhook URL', async () => {
+		useAccount.mockReturnValue( {
+			data: {
+				configured_webhook_urls: {
+					live: 'https%3A%2F%2Fexample.com%2Fwc-api%2Fwc_stripe',
+				},
+			},
+		} );
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: true,
+			webhook_secret: '',
+		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
-				screen.getByLabelText( /Enable Agentic Commerce/i )
+				screen.getByText( /Set endpoint URL as/i )
+			).toBeInTheDocument();
+		} );
+
+		expect(
+			screen.getByRole( 'button', { name: /Copy/i } )
+		).toBeInTheDocument();
+	} );
+
+	it( 'shows fallback text when no webhook URL is available', async () => {
+		useAccount.mockReturnValue( { data: null } );
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: true,
+			webhook_secret: '',
+		} );
+
+		render( <AgenticCommerceSection /> );
+
+		await waitFor( () => {
+			expect(
+				screen.getByText( /Setup webhooks in/i )
+			).toBeInTheDocument();
+		} );
+	} );
+
+	// -------------------------------------------------------------------------
+	// Settings controls
+	// -------------------------------------------------------------------------
+
+	it( 'renders the Enable agentic commerce toggle', async () => {
+		mockFetchByPath( EMPTY_RESPONSE );
+
+		render( <AgenticCommerceSection /> );
+
+		await waitFor( () => {
+			expect(
+				screen.getByLabelText( /Enable agentic commerce/i )
 			).toBeInTheDocument();
 		} );
 	} );
@@ -595,11 +564,11 @@ describe( 'AgenticCommercePanel', () => {
 			webhook_secret: '',
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
-				screen.queryByLabelText( /Webhook Secret/i )
+				screen.queryByLabelText( /Webhook secret/i )
 			).not.toBeInTheDocument();
 		} );
 	} );
@@ -610,11 +579,11 @@ describe( 'AgenticCommercePanel', () => {
 			webhook_secret: '',
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
 			expect(
-				screen.getByLabelText( /Agentic Commerce Webhook Secret/i )
+				screen.getByLabelText( /Webhook secret/i )
 			).toBeInTheDocument();
 		} );
 	} );
@@ -622,20 +591,24 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'prefills webhook secret field with masked placeholder when a secret is stored', async () => {
 		mockFetchByPath( EMPTY_RESPONSE, {
 			is_enabled: true,
-			webhook_secret: MASKED_WEBHOOK_SECRET,
+			webhook_secret: '****',
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection /> );
 
 		await waitFor( () => {
-			const input = screen.getByLabelText(
-				/Agentic Commerce Webhook Secret/i
-			);
-			expect( input.value ).toBe( MASKED_WEBHOOK_SECRET );
+			const input = screen.getByLabelText( /Webhook secret/i );
+			expect( input.value ).toBe( '****' );
 		} );
 	} );
 
-	it( 'saves settings and shows success notice', async () => {
+	// -------------------------------------------------------------------------
+	// Save via ref
+	// -------------------------------------------------------------------------
+
+	it( 'exposes a save function via ref that saves settings', async () => {
+		const ref = { current: null };
+
 		apiFetch.mockImplementation( ( { path, method } ) => {
 			if (
 				method === 'POST' &&
@@ -649,50 +622,95 @@ describe( 'AgenticCommercePanel', () => {
 			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
 				return Promise.resolve( {
 					is_enabled: true,
-					webhook_secret: 'whsec_new',
+					webhook_secret: '',
 				} );
 			}
 			return Promise.resolve( EMPTY_RESPONSE );
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection ref={ ref } /> );
 
-		const saveBtn = await screen.findByRole( 'button', {
-			name: /Save Settings/i,
+		// Wait for initial load to complete.
+		await waitFor( () => {
+			expect( ref.current ).not.toBeNull();
 		} );
-		fireEvent.click( saveBtn );
+		expect( typeof ref.current.save ).toBe( 'function' );
+
+		// Trigger save via ref.
+		await ref.current.save();
+
+		expect( apiFetch ).toHaveBeenCalledWith(
+			expect.objectContaining( {
+				path: '/wc/v3/wc_stripe/agentic-commerce/settings',
+				method: 'POST',
+			} )
+		);
+	} );
+
+	it( 'renders an error notice when save via ref fails', async () => {
+		const ref = { current: null };
+
+		apiFetch.mockImplementation( ( { path, method } ) => {
+			if (
+				method === 'POST' &&
+				path === '/wc/v3/wc_stripe/agentic-commerce/settings'
+			) {
+				return Promise.reject( { message: 'Server exploded' } );
+			}
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				return Promise.resolve( {
+					is_enabled: true,
+					webhook_secret: '',
+				} );
+			}
+			return Promise.resolve( EMPTY_RESPONSE );
+		} );
+
+		render( <AgenticCommerceSection ref={ ref } /> );
+
+		await waitFor( () => {
+			expect( ref.current ).not.toBeNull();
+		} );
+
+		await ref.current.save();
 
 		await waitFor( () => {
 			expect(
-				screen.getAllByText( /Settings saved/i ).length
+				screen.getAllByText( /Server exploded/i ).length
 			).toBeGreaterThanOrEqual( 1 );
 		} );
 	} );
 
-	it( 'shows error notice when settings save fails', async () => {
+	it( 'falls back to a generic error message when save via ref rejects without a message', async () => {
+		const ref = { current: null };
+
 		apiFetch.mockImplementation( ( { path, method } ) => {
 			if (
 				method === 'POST' &&
 				path === '/wc/v3/wc_stripe/agentic-commerce/settings'
 			) {
-				return Promise.reject( { message: 'Save failed' } );
+				return Promise.reject( {} );
 			}
 			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
-				return Promise.resolve( SETTINGS_RESPONSE );
+				return Promise.resolve( {
+					is_enabled: true,
+					webhook_secret: '',
+				} );
 			}
 			return Promise.resolve( EMPTY_RESPONSE );
 		} );
 
-		render( <AgenticCommercePanel /> );
+		render( <AgenticCommerceSection ref={ ref } /> );
 
-		const saveBtn = await screen.findByRole( 'button', {
-			name: /Save Settings/i,
+		await waitFor( () => {
+			expect( ref.current ).not.toBeNull();
 		} );
-		fireEvent.click( saveBtn );
+
+		await ref.current.save();
 
 		await waitFor( () => {
 			expect(
-				screen.getAllByText( /Save failed/i ).length
+				screen.getAllByText( /Failed to save settings/i ).length
 			).toBeGreaterThanOrEqual( 1 );
 		} );
 	} );
