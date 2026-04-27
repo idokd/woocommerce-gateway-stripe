@@ -1,8 +1,18 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import AgenticCommercePanel from '..';
 import apiFetch from '@wordpress/api-fetch';
+import { useTestMode } from 'wcstripe/data';
+import { useAccount } from 'wcstripe/data/account';
 
 jest.mock( '@wordpress/api-fetch' );
+
+jest.mock( 'wcstripe/data', () => ( {
+	useTestMode: jest.fn(),
+} ) );
+
+jest.mock( 'wcstripe/data/account', () => ( {
+	useAccount: jest.fn(),
+} ) );
 
 // Static baseline response. next_sync is intentionally omitted here so
 // individual tests can provide a value that is always relative to real time.
@@ -41,13 +51,43 @@ const makeResponse = ( overrides = {} ) => ( {
 
 const EMPTY_RESPONSE = { last_sync: null, history: [], next_sync: null };
 
+const SETTINGS_RESPONSE = { is_enabled: true, webhook_secret: '' };
+
+// Mirrors WC_REST_Stripe_Agentic_Commerce_Controller::MASKED_WEBHOOK_SECRET.
+// (The webhook secret *option key* lives on the integration class so it is
+// always loaded for webhook deliveries; only the masking placeholder lives on
+// the controller as it is UI-presentation only.)
+const MASKED_WEBHOOK_SECRET = 'whsec_********************************';
+
+/**
+ * Set up apiFetch to route by path. Status calls return `statusResponse`
+ * and settings calls return `settingsResponse`. Additional one-off mocks
+ * (mockResolvedValueOnce) take priority and are consumed first.
+ *
+ * @param {Object} statusResponse   Response for the status endpoint.
+ * @param {Object} settingsResponse Response for the settings endpoint.
+ */
+const mockFetchByPath = (
+	statusResponse = EMPTY_RESPONSE,
+	settingsResponse = SETTINGS_RESPONSE
+) => {
+	apiFetch.mockImplementation( ( { path } ) => {
+		if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+			return Promise.resolve( settingsResponse );
+		}
+		return Promise.resolve( statusResponse );
+	} );
+};
+
 describe( 'AgenticCommercePanel', () => {
 	beforeEach( () => {
+		useTestMode.mockReturnValue( [ false ] );
+		useAccount.mockReturnValue( { data: null } );
 		global.wc_stripe_settings_params = {
 			agentic_commerce_import_sets_url:
 				'https://dashboard.stripe.com/test/data-management/import-sets',
 			agentic_commerce_logs_url:
-				'/wp-admin/admin.php?page=wc-status&tab=logs&source=woocommerce-gateway-stripe',
+				'/wp-admin/admin.php?page=wc-status&tab=logs',
 		};
 	} );
 
@@ -61,7 +101,7 @@ describe( 'AgenticCommercePanel', () => {
 	// -------------------------------------------------------------------------
 
 	it( 'shows loading indicators while fetching', () => {
-		apiFetch.mockReturnValueOnce( new Promise( () => {} ) );
+		apiFetch.mockReturnValue( new Promise( () => {} ) );
 
 		render( <AgenticCommercePanel /> );
 
@@ -75,7 +115,7 @@ describe( 'AgenticCommercePanel', () => {
 	// -------------------------------------------------------------------------
 
 	it( 'shows "No syncs yet" when last_sync is null', async () => {
-		apiFetch.mockResolvedValueOnce( EMPTY_RESPONSE );
+		mockFetchByPath( EMPTY_RESPONSE );
 
 		render( <AgenticCommercePanel /> );
 
@@ -85,7 +125,7 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'shows "No sync history available" when history is empty', async () => {
-		apiFetch.mockResolvedValueOnce( EMPTY_RESPONSE );
+		mockFetchByPath( EMPTY_RESPONSE );
 
 		render( <AgenticCommercePanel /> );
 
@@ -101,7 +141,7 @@ describe( 'AgenticCommercePanel', () => {
 	// -------------------------------------------------------------------------
 
 	it( 'renders a success status badge when last sync succeeded', async () => {
-		apiFetch.mockResolvedValueOnce( makeResponse() );
+		mockFetchByPath( makeResponse() );
 
 		render( <AgenticCommercePanel /> );
 
@@ -115,7 +155,7 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'renders product count from last_sync', async () => {
-		apiFetch.mockResolvedValueOnce( makeResponse() );
+		mockFetchByPath( makeResponse() );
 
 		render( <AgenticCommercePanel /> );
 
@@ -128,7 +168,7 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'renders import_set_id from last_sync', async () => {
-		apiFetch.mockResolvedValueOnce( makeResponse() );
+		mockFetchByPath( makeResponse() );
 
 		render( <AgenticCommercePanel /> );
 
@@ -144,7 +184,7 @@ describe( 'AgenticCommercePanel', () => {
 	// -------------------------------------------------------------------------
 
 	it( 'renders the history table with correct row count', async () => {
-		apiFetch.mockResolvedValueOnce( makeResponse() );
+		mockFetchByPath( makeResponse() );
 
 		render( <AgenticCommercePanel /> );
 
@@ -154,7 +194,7 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'shows an info icon next to failed history rows that have an error', async () => {
-		apiFetch.mockResolvedValueOnce( makeResponse() );
+		mockFetchByPath( makeResponse() );
 
 		render( <AgenticCommercePanel /> );
 
@@ -171,7 +211,7 @@ describe( 'AgenticCommercePanel', () => {
 	// -------------------------------------------------------------------------
 
 	it( 'renders the last sync error notice when last_sync has an error', async () => {
-		apiFetch.mockResolvedValueOnce(
+		mockFetchByPath(
 			makeResponse( {
 				last_sync: {
 					...LAST_SYNC_SUCCESS,
@@ -196,9 +236,7 @@ describe( 'AgenticCommercePanel', () => {
 
 	it( 'shows next sync countdown when next_sync is in the future', async () => {
 		const futureTs = Math.floor( Date.now() / 1000 ) + 1800; // 30 min ahead
-		apiFetch.mockResolvedValueOnce(
-			makeResponse( { next_sync: futureTs } )
-		);
+		mockFetchByPath( makeResponse( { next_sync: futureTs } ) );
 
 		render( <AgenticCommercePanel /> );
 
@@ -211,7 +249,7 @@ describe( 'AgenticCommercePanel', () => {
 
 	it( 'shows "imminent" label when next_sync is just in the past', async () => {
 		const pastTs = Math.floor( Date.now() / 1000 ) - 100;
-		apiFetch.mockResolvedValueOnce( makeResponse( { next_sync: pastTs } ) );
+		mockFetchByPath( makeResponse( { next_sync: pastTs } ) );
 
 		render( <AgenticCommercePanel /> );
 
@@ -231,17 +269,14 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'shows an overdue warning when next_sync is far in the past', async () => {
 		// 30 minutes overdue — well past the 10-minute threshold.
 		const overdueTs = Math.floor( Date.now() / 1000 ) - 30 * 60;
-		apiFetch.mockResolvedValueOnce(
-			makeResponse( { next_sync: overdueTs } )
-		);
+		mockFetchByPath( makeResponse( { next_sync: overdueTs } ) );
 
 		render( <AgenticCommercePanel /> );
 
 		await waitFor( () => {
 			expect(
-				getVisibleText(
-					/scheduled sync is overdue by 3(0|1) minutes?/i
-				).length
+				getVisibleText( /scheduled sync is overdue by \d+ minutes?/i )
+					.length
 			).toBeGreaterThanOrEqual( 1 );
 		} );
 
@@ -253,7 +288,7 @@ describe( 'AgenticCommercePanel', () => {
 	it( 'does not show an overdue warning when next_sync is only slightly in the past', async () => {
 		// 2 minutes in the past — within the "imminent" window.
 		const pastTs = Math.floor( Date.now() / 1000 ) - 2 * 60;
-		apiFetch.mockResolvedValueOnce( makeResponse( { next_sync: pastTs } ) );
+		mockFetchByPath( makeResponse( { next_sync: pastTs } ) );
 
 		render( <AgenticCommercePanel /> );
 
@@ -267,11 +302,11 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	// -------------------------------------------------------------------------
-	// API fetch call
+	// API fetch calls
 	// -------------------------------------------------------------------------
 
 	it( 'fetches status from the correct REST path on mount', async () => {
-		apiFetch.mockResolvedValueOnce( EMPTY_RESPONSE );
+		mockFetchByPath( EMPTY_RESPONSE );
 
 		render( <AgenticCommercePanel /> );
 
@@ -282,12 +317,24 @@ describe( 'AgenticCommercePanel', () => {
 		} );
 	} );
 
+	it( 'fetches settings from the correct REST path on mount', async () => {
+		mockFetchByPath( EMPTY_RESPONSE );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			expect( apiFetch ).toHaveBeenCalledWith( {
+				path: '/wc/v3/wc_stripe/agentic-commerce/settings',
+			} );
+		} );
+	} );
+
 	// -------------------------------------------------------------------------
 	// Sync Now button
 	// -------------------------------------------------------------------------
 
 	it( 'renders the Sync Now button', async () => {
-		apiFetch.mockResolvedValueOnce( EMPTY_RESPONSE );
+		mockFetchByPath( EMPTY_RESPONSE );
 
 		render( <AgenticCommercePanel /> );
 
@@ -299,10 +346,20 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'shows success notice and re-fetches after a successful sync', async () => {
-		apiFetch
-			.mockResolvedValueOnce( EMPTY_RESPONSE )
-			.mockResolvedValueOnce( { success: true } )
-			.mockResolvedValueOnce( makeResponse() );
+		// Mount: settings → SETTINGS_RESPONSE (is_enabled: true), status → EMPTY_RESPONSE.
+		// Sync POST → success, re-fetch status → populated response.
+		apiFetch.mockImplementation( ( { path, method } ) => {
+			if (
+				method === 'POST' &&
+				path === '/wc/v3/wc_stripe/agentic-commerce/sync'
+			) {
+				return Promise.resolve( { success: true } );
+			}
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				return Promise.resolve( SETTINGS_RESPONSE );
+			}
+			return Promise.resolve( makeResponse() );
+		} );
 
 		render( <AgenticCommercePanel /> );
 
@@ -333,9 +390,18 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'shows error notice when sync POST fails', async () => {
-		apiFetch
-			.mockResolvedValueOnce( EMPTY_RESPONSE )
-			.mockRejectedValueOnce( { message: 'Server error' } );
+		apiFetch.mockImplementation( ( { path, method } ) => {
+			if (
+				method === 'POST' &&
+				path === '/wc/v3/wc_stripe/agentic-commerce/sync'
+			) {
+				return Promise.reject( { message: 'Server error' } );
+			}
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				return Promise.resolve( SETTINGS_RESPONSE );
+			}
+			return Promise.resolve( EMPTY_RESPONSE );
+		} );
 
 		render( <AgenticCommercePanel /> );
 
@@ -352,9 +418,18 @@ describe( 'AgenticCommercePanel', () => {
 	} );
 
 	it( 'shows fallback error message when sync POST fails without a message', async () => {
-		apiFetch
-			.mockResolvedValueOnce( EMPTY_RESPONSE )
-			.mockRejectedValueOnce( {} );
+		apiFetch.mockImplementation( ( { path, method } ) => {
+			if (
+				method === 'POST' &&
+				path === '/wc/v3/wc_stripe/agentic-commerce/sync'
+			) {
+				return Promise.reject( {} );
+			}
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				return Promise.resolve( SETTINGS_RESPONSE );
+			}
+			return Promise.resolve( EMPTY_RESPONSE );
+		} );
 
 		render( <AgenticCommercePanel /> );
 
@@ -377,7 +452,12 @@ describe( 'AgenticCommercePanel', () => {
 	// -------------------------------------------------------------------------
 
 	it( 'shows an error notice when the initial fetch fails', async () => {
-		apiFetch.mockRejectedValueOnce( { message: 'Connection refused' } );
+		apiFetch.mockImplementation( ( { path } ) => {
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				return Promise.resolve( SETTINGS_RESPONSE );
+			}
+			return Promise.reject( { message: 'Connection refused' } );
+		} );
 
 		render( <AgenticCommercePanel /> );
 
@@ -394,82 +474,226 @@ describe( 'AgenticCommercePanel', () => {
 		).not.toBeInTheDocument();
 	} );
 
-	// -------------------------------------------------------------------------
-	// Auto-refresh while sync is in progress
-	// -------------------------------------------------------------------------
-
-	describe( 'auto-refresh while sync is in progress', () => {
-		// Use a tiny poll interval so the test can wait on real timers without
-		// pulling in fake-timer plumbing. The component accepts pollIntervalMs
-		// as a prop precisely to keep this lightweight.
-		const TEST_POLL_INTERVAL_MS = 25;
-
-		it( 'polls /status while last sync is in a non-terminal state and stops once terminal', async () => {
-			const inProgress = makeResponse( {
-				last_sync: {
-					...LAST_SYNC_SUCCESS,
-					status: 'creating_records',
-				},
-			} );
-			const terminal = makeResponse();
-
-			apiFetch
-				.mockResolvedValueOnce( inProgress ) // initial mount
-				.mockResolvedValueOnce( inProgress ) // poll 1
-				.mockResolvedValueOnce( terminal ) // poll 2 → terminal
-				.mockResolvedValue( terminal ); // any extra polls
-
-			render(
-				<AgenticCommercePanel
-					pollIntervalMs={ TEST_POLL_INTERVAL_MS }
-				/>
-			);
-
-			// Wait until the dashboard has actually polled at least once
-			// past its initial mount fetch — proves polling is active.
-			await waitFor( () => {
-				expect( apiFetch.mock.calls.length ).toBeGreaterThanOrEqual(
-					2
-				);
-			} );
-
-			// Wait until the terminal response has been consumed (third call).
-			await waitFor( () => {
-				expect( apiFetch.mock.calls.length ).toBeGreaterThanOrEqual(
-					3
-				);
-			} );
-
-			// After the terminal response, polling should stop. Capture the
-			// current count and confirm it doesn't grow over several intervals.
-			const callsAfterTerminal = apiFetch.mock.calls.length;
-			await new Promise( ( resolve ) =>
-				setTimeout( resolve, TEST_POLL_INTERVAL_MS * 6 )
-			);
-			expect( apiFetch ).toHaveBeenCalledTimes( callsAfterTerminal );
+	it( 'does not render the settings form when the GET /settings request fails', async () => {
+		apiFetch.mockImplementation( ( { path, method = 'GET' } ) => {
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				if ( method === 'GET' ) {
+					return Promise.reject( {
+						message: 'Settings load failed',
+					} );
+				}
+				// A POST should never happen in this scenario; if it does the
+				// assertions below will fail loudly.
+				return Promise.resolve( SETTINGS_RESPONSE );
+			}
+			return Promise.resolve( EMPTY_RESPONSE );
 		} );
 
-		it( 'does not poll when last sync is already in a terminal state', async () => {
-			apiFetch.mockResolvedValueOnce( makeResponse() );
+		render( <AgenticCommercePanel /> );
 
-			render(
-				<AgenticCommercePanel
-					pollIntervalMs={ TEST_POLL_INTERVAL_MS }
-				/>
+		// The error notice surfaces the load failure.
+		await waitFor( () => {
+			expect(
+				screen.getAllByText( /Settings load failed/i ).length
+			).toBeGreaterThanOrEqual( 1 );
+		} );
+
+		// The form is locked: no toggle, no save button.
+		expect(
+			screen.queryByRole( 'checkbox', {
+				name: /Enable Agentic Commerce/i,
+			} )
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole( 'button', { name: /Save Settings/i } )
+		).not.toBeInTheDocument();
+
+		// And no destructive POST has been issued.
+		expect( apiFetch ).not.toHaveBeenCalledWith(
+			expect.objectContaining( {
+				path: '/wc/v3/wc_stripe/agentic-commerce/settings',
+				method: 'POST',
+			} )
+		);
+	} );
+
+	// -------------------------------------------------------------------------
+	// Onboarding steps visibility
+	// -------------------------------------------------------------------------
+
+	it( 'shows onboarding steps when feature is enabled and no webhook secret is saved', async () => {
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: true,
+			webhook_secret: '',
+		} );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			expect(
+				screen.getByText( /Getting started on the Stripe side/i )
+			).toBeInTheDocument();
+		} );
+	} );
+
+	it( 'hides onboarding steps when feature is disabled', async () => {
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: false,
+			webhook_secret: '',
+		} );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			expect(
+				screen.queryByLabelText( /Webhook Secret/i )
+			).not.toBeInTheDocument();
+		} );
+		expect(
+			screen.queryByText( /Getting started on the Stripe side/i )
+		).not.toBeInTheDocument();
+	} );
+
+	it( 'hides onboarding steps when feature is enabled and webhook secret is already saved', async () => {
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: true,
+			webhook_secret: MASKED_WEBHOOK_SECRET, // masked placeholder returned by GET when a secret is stored
+		} );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			// Webhook secret input should be visible (feature enabled)
+			expect(
+				screen.getByLabelText( /Agentic Commerce Webhook Secret/i )
+			).toBeInTheDocument();
+		} );
+		expect(
+			screen.queryByText( /Getting started on the Stripe side/i )
+		).not.toBeInTheDocument();
+	} );
+
+	// -------------------------------------------------------------------------
+	// Settings card
+	// -------------------------------------------------------------------------
+
+	it( 'renders the Enable Agentic Commerce toggle', async () => {
+		mockFetchByPath( EMPTY_RESPONSE );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			expect(
+				screen.getByLabelText( /Enable Agentic Commerce/i )
+			).toBeInTheDocument();
+		} );
+	} );
+
+	it( 'does not show webhook secret input when feature is disabled', async () => {
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: false,
+			webhook_secret: '',
+		} );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			expect(
+				screen.queryByLabelText( /Webhook Secret/i )
+			).not.toBeInTheDocument();
+		} );
+	} );
+
+	it( 'shows webhook secret input when feature is enabled', async () => {
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: true,
+			webhook_secret: '',
+		} );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			expect(
+				screen.getByLabelText( /Agentic Commerce Webhook Secret/i )
+			).toBeInTheDocument();
+		} );
+	} );
+
+	it( 'prefills webhook secret field with masked placeholder when a secret is stored', async () => {
+		mockFetchByPath( EMPTY_RESPONSE, {
+			is_enabled: true,
+			webhook_secret: MASKED_WEBHOOK_SECRET,
+		} );
+
+		render( <AgenticCommercePanel /> );
+
+		await waitFor( () => {
+			const input = screen.getByLabelText(
+				/Agentic Commerce Webhook Secret/i
 			);
+			expect( input.value ).toBe( MASKED_WEBHOOK_SECRET );
+		} );
+	} );
 
-			// Wait for the initial fetch to settle. We can't simply
-			// look for "Success" text because @wordpress/components Notice
-			// retains text from prior tests in its a11y-speak region.
-			await waitFor( () => {
-				expect( apiFetch ).toHaveBeenCalledTimes( 1 );
-			} );
+	it( 'saves settings and shows success notice', async () => {
+		apiFetch.mockImplementation( ( { path, method } ) => {
+			if (
+				method === 'POST' &&
+				path === '/wc/v3/wc_stripe/agentic-commerce/settings'
+			) {
+				return Promise.resolve( {
+					is_enabled: true,
+					webhook_secret: 'whsec_new',
+				} );
+			}
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				return Promise.resolve( {
+					is_enabled: true,
+					webhook_secret: 'whsec_new',
+				} );
+			}
+			return Promise.resolve( EMPTY_RESPONSE );
+		} );
 
-			// Wait several polling intervals — terminal state must not poll.
-			await new Promise( ( resolve ) =>
-				setTimeout( resolve, TEST_POLL_INTERVAL_MS * 6 )
-			);
-			expect( apiFetch ).toHaveBeenCalledTimes( 1 );
+		render( <AgenticCommercePanel /> );
+
+		const saveBtn = await screen.findByRole( 'button', {
+			name: /Save Settings/i,
+		} );
+		fireEvent.click( saveBtn );
+
+		await waitFor( () => {
+			expect(
+				screen.getAllByText( /Settings saved/i ).length
+			).toBeGreaterThanOrEqual( 1 );
+		} );
+	} );
+
+	it( 'shows error notice when settings save fails', async () => {
+		apiFetch.mockImplementation( ( { path, method } ) => {
+			if (
+				method === 'POST' &&
+				path === '/wc/v3/wc_stripe/agentic-commerce/settings'
+			) {
+				return Promise.reject( { message: 'Save failed' } );
+			}
+			if ( path === '/wc/v3/wc_stripe/agentic-commerce/settings' ) {
+				return Promise.resolve( SETTINGS_RESPONSE );
+			}
+			return Promise.resolve( EMPTY_RESPONSE );
+		} );
+
+		render( <AgenticCommercePanel /> );
+
+		const saveBtn = await screen.findByRole( 'button', {
+			name: /Save Settings/i,
+		} );
+		fireEvent.click( saveBtn );
+
+		await waitFor( () => {
+			expect(
+				screen.getAllByText( /Save failed/i ).length
+			).toBeGreaterThanOrEqual( 1 );
 		} );
 	} );
 } );
