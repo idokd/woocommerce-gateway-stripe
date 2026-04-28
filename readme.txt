@@ -240,5 +240,6 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 * Fix: Improve UX for the "Stripe first method" notice for Optimized Checkout
 * Fix - Change Checkout Sessions (Adaptive Pricing) redirect-based flow to match the existing PaymentIntent flow (redirect to checkout page)
 * Fix - Ensure currency selector appears after saved payment methods in classic checkout
+* Dev - Bump transitive minimatch dev dependency to resolve ReDoS CVE-2026-27903 (GHSA-7r86-cg39-jmmj)
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
