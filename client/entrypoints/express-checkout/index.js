@@ -1,10 +1,10 @@
 /* global wcStripeExpressCheckoutPayForOrderParams */
 /* global wc_stripe_express_checkout_params */
 
-import { __ } from '@wordpress/i18n';
 import { debounce } from 'lodash';
 import jQuery from 'jquery';
 import WCStripeAPI from '../../api';
+import { __ } from '@wordpress/i18n';
 import {
 	displayExpressCheckoutNotice,
 	displayLoginConfirmation,
@@ -90,8 +90,8 @@ jQuery( function ( $ ) {
 	const resolveClickEvent = ( event, options ) => {
 		const getDefaultShippingRates = () => {
 			// Return a default shipping option when shipping is required but no rates are provided
-			const defaultShippingOption = getExpressCheckoutData( 'checkout' )
-				?.default_shipping_option;
+			const defaultShippingOption =
+				getExpressCheckoutData( 'checkout' )?.default_shipping_option;
 			return defaultShippingOption ? [ defaultShippingOption ] : [];
 		};
 		const allowedShippingCountries = getExpressCheckoutData(
@@ -205,31 +205,38 @@ jQuery( function ( $ ) {
 					.map( ( i ) => ( {
 						id: 'rate-shipping',
 						amount: i.amount,
-						displayName: useLegacyCartEndpoints ? i.label : i.name,
+						displayName: useLegacyCartEndpoints
+							? i.label ?? i.name
+							: i.name,
 					} ) );
 			};
 
 			const shippingRates = getShippingRates();
 
-			const isPaymentRequestEnabled =
+			const isExpressCheckoutEnabled =
 				wc_stripe_express_checkout_params?.stripe // eslint-disable-line camelcase
-					?.is_payment_request_enabled;
+					?.is_express_checkout_enabled;
 			const isAmazonPayEnabled =
 				wc_stripe_express_checkout_params?.stripe // eslint-disable-line camelcase
 					?.is_amazon_pay_enabled;
 			const isLinkEnabled =
 				wc_stripe_express_checkout_params?.stripe?.is_link_enabled; // eslint-disable-line camelcase
+			const areTaxesBasedOnBillingAddress = getExpressCheckoutData(
+				'taxes_based_on_billing'
+			);
 
 			// For each supported express payment type, create their own
 			// express checkout element. This is necessary as some express payment types
 			// may require different options or configurations, e.g. Amazon Pay
 			// does not support paymentMethodCreation: 'manual'.
 			const expressPaymentTypes = [
-				isPaymentRequestEnabled &&
+				isExpressCheckoutEnabled &&
 					EXPRESS_PAYMENT_METHOD_SETTING_APPLE_PAY,
-				isPaymentRequestEnabled &&
+				isExpressCheckoutEnabled &&
 					EXPRESS_PAYMENT_METHOD_SETTING_GOOGLE_PAY,
-				isAmazonPayEnabled && EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY,
+				isAmazonPayEnabled &&
+					! areTaxesBasedOnBillingAddress &&
+					EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY,
 				isLinkEnabled && EXPRESS_PAYMENT_METHOD_SETTING_LINK,
 			].filter( Boolean );
 
@@ -331,18 +338,22 @@ jQuery( function ( $ ) {
 				return;
 			}
 
+			const hasFreeTrial = getExpressCheckoutData( 'has_free_trial' );
+
 			const elements = api.getStripe().elements( {
-				mode: options.mode ? options.mode : 'payment',
+				mode: hasFreeTrial ? 'subscription' : 'payment',
 				amount: options.total,
 				currency: options.currency,
-				...( isManualPaymentMethodCreation( expressPaymentType ) && {
+				...( isManualPaymentMethodCreation(
+					expressPaymentType,
+					hasFreeTrial
+				) && {
 					paymentMethodCreation: 'manual',
 				} ),
 				appearance: getExpressCheckoutButtonAppearance(),
 				locale: getExpressCheckoutData( 'stripe' )?.locale ?? 'en',
-				paymentMethodTypes: getPaymentMethodTypesForExpressMethod(
-					expressPaymentType
-				),
+				paymentMethodTypes:
+					getPaymentMethodTypesForExpressMethod( expressPaymentType ),
 			} );
 
 			const eceButton = wcStripeECE.createButton( elements, {
@@ -463,6 +474,7 @@ jQuery( function ( $ ) {
 					event,
 					order,
 					orderDetails,
+					hasFreeTrial,
 				} );
 			} );
 
@@ -519,10 +531,9 @@ jQuery( function ( $ ) {
 				}
 
 				wcStripeECE.startExpressCheckout( {
-					mode: 'payment',
 					total,
-					currency: getExpressCheckoutData( 'checkout' )
-						.currency_code,
+					currency:
+						getExpressCheckoutData( 'checkout' ).currency_code,
 					appearance: getExpressCheckoutButtonAppearance(),
 					locale: getExpressCheckoutData( 'stripe' )?.locale ?? 'en',
 					displayItems: transformLabeledDisplayItems(
@@ -539,7 +550,6 @@ jQuery( function ( $ ) {
 					const displayItems =
 						getExpressCheckoutData( 'product' ).displayItems ?? [];
 					wcStripeECE.startExpressCheckout( {
-						mode: 'payment',
 						total: getExpressCheckoutData( 'product' )?.total
 							.amount,
 						currency: getExpressCheckoutData( 'product' )?.currency,
@@ -563,19 +573,22 @@ jQuery( function ( $ ) {
 						cart.totals
 					);
 
-					if ( total === 0 ) {
+					if (
+						total === 0 &&
+						! getExpressCheckoutData( 'has_free_trial' )
+					) {
 						wcStripeECE.hide();
 						return;
 					}
 
 					wcStripeECE.startExpressCheckout( {
-						mode: 'payment',
 						total,
-						currency: getExpressCheckoutData( 'checkout' )
-							?.currency_code,
+						currency:
+							getExpressCheckoutData( 'checkout' )?.currency_code,
 						requestShipping: cart.needs_shipping === true,
-						requestPhone: getExpressCheckoutData( 'checkout' )
-							?.needs_payer_phone,
+						requestPhone:
+							getExpressCheckoutData( 'checkout' )
+								?.needs_payer_phone,
 						displayItems: transformCartDataForDisplayItems( cart ),
 					} );
 				} );
@@ -785,7 +798,8 @@ jQuery( function ( $ ) {
 							if ( response.error ) {
 								wcStripeECE.hide();
 							} else {
-								const isDeposits = wcStripeECE.productHasDepositOption();
+								const isDeposits =
+									wcStripeECE.productHasDepositOption();
 								/**
 								 * If the customer aborted the express checkout,
 								 * we need to re init the express checkout button to ensure the shipping

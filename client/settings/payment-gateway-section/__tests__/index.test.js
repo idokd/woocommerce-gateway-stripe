@@ -33,16 +33,19 @@ jest.mock( '../../../data/payment-gateway/hooks', () => ( {
 	usePaymentGatewayDescription: jest.fn(),
 } ) );
 
-jest.mock( '../../loadable-payment-gateway-section', () => ( { children } ) =>
-	children
+jest.mock(
+	'../../loadable-payment-gateway-section',
+	() =>
+		( { children } ) =>
+			children
 );
 
 describe( 'PaymentGatewaySection', () => {
 	beforeEach( () => {
 		useEnabledPaymentGateway.mockReturnValue( [ false ] );
-		usePaymentGatewayName.mockReturnValue( [ 'iDEAL' ] );
+		usePaymentGatewayName.mockReturnValue( [ 'iDEAL | Wero' ] );
 		usePaymentGatewayDescription.mockReturnValue( [
-			'You will be redirected to iDEAL',
+			'You will be redirected to iDEAL | Wero',
 		] );
 	} );
 

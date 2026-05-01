@@ -27,6 +27,7 @@ export const PAYMENT_METHOD_ACH = 'us_bank_account';
 export const PAYMENT_METHOD_ACSS = 'acss_debit';
 export const PAYMENT_METHOD_BACS = 'bacs_debit';
 export const PAYMENT_METHOD_BECS = 'au_becs_debit';
+export const PAYMENT_METHOD_APPLE_PAY_GOOGLE_PAY = 'apple_pay_google_pay';
 
 /**
  * Payment method names constants with the `stripe` prefix
@@ -143,6 +144,12 @@ export const EXPRESS_PAYMENT_METHODS = [
 ];
 
 /**
+ * This constant defines the max number of shipping options that can be handled by the Express Checkout Element (ECE).
+ * More than 9 options will prevent the UI from behaving correctly and cause an IntegrationError.
+ */
+export const SHIPPING_RATES_UPPER_LIMIT_COUNT = 9;
+
+/**
  * List of payment methods that are not recurring
  */
 export const NON_REUSABLE_METHODS = [
@@ -153,7 +160,6 @@ export const NON_REUSABLE_METHODS = [
 	PAYMENT_METHOD_BOLETO,
 	PAYMENT_METHOD_EPS,
 	PAYMENT_METHOD_GIROPAY,
-	PAYMENT_METHOD_KLARNA,
 	PAYMENT_METHOD_MULTIBANCO,
 	PAYMENT_METHOD_P24,
 	PAYMENT_METHOD_OXXO,
@@ -172,6 +178,8 @@ export const BNPL_METHODS = [
 export const PAYMENT_METHOD_UNAVAILABLE_REASONS = {
 	UNSUPPORTED_CURRENCY: 'unsupported_currency',
 	OFFICIAL_PLUGIN_CONFLICT: 'official_plugin_conflict',
+	TAX_BASED_ON_BILLING_ADDRESS: 'tax_based_on_billing_address',
+	REQUIRES_CARD_METHOD: 'requires_card_method',
 };
 
 /**
@@ -180,3 +188,15 @@ export const PAYMENT_METHOD_UNAVAILABLE_REASONS = {
  * @type {string}
  */
 export const OPTIMIZED_CHECKOUT_DEFAULT_LAYOUT = 'accordion';
+
+/**
+ * Stripe.js options to hide the testing assistant on Clover+ when using Adaptive Pricing
+ * with Checkout Sessions.
+ */
+export const STRIPE_JS_OPTIONS_DISABLE_TESTING_ASSISTANT = {
+	developerTools: {
+		assistant: {
+			enabled: false,
+		},
+	},
+};

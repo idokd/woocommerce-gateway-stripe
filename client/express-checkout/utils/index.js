@@ -38,7 +38,7 @@ export const getErrorMessageFromNotice = ( notice ) => {
  */
 export const getExpressCheckoutData = ( key ) =>
 	// eslint-disable-next-line camelcase
-	wc_stripe_express_checkout_params[ key ] ?? null;
+	wc_stripe_express_checkout_params?.[ key ] ?? null;
 
 /**
  * Construct Express Checkout AJAX endpoint URL.
@@ -93,6 +93,11 @@ export const displayLoginConfirmation = ( expressPaymentType ) => {
 	}
 };
 
+/**
+ * Returns the default border radius in pixels for Express Checkout buttons.
+ *
+ * @return {number} The default border radius value.
+ */
 export const getDefaultBorderRadius = () => {
 	return 4;
 };
@@ -105,7 +110,7 @@ export const getExpressCheckoutButtonAppearance = () => {
 	return {
 		variables: {
 			borderRadius: `${
-				getExpressCheckoutData( 'button' )?.radius ||
+				getExpressCheckoutData( 'button' )?.radius ??
 				getDefaultBorderRadius()
 			}px`,
 			spacingUnit: '6px',
@@ -198,6 +203,13 @@ export const getCustomerNote = () => {
 	return '';
 };
 
+/**
+ * Collects required field values from the WooCommerce Blocks checkout form and
+ * merges them into the provided data object.
+ *
+ * @param {Object} data The existing form data to augment.
+ * @return {Object} The data object enriched with required field values.
+ */
 const getRequiredFieldDataFromBlockCheckoutForm = ( data ) => {
 	const checkoutForm = document.querySelector( '.wc-block-checkout' );
 	// Return if cart page.
@@ -231,6 +243,13 @@ const getRequiredFieldDataFromBlockCheckoutForm = ( data ) => {
 	return data;
 };
 
+/**
+ * Collects required field values from the WooCommerce shortcode checkout form and
+ * merges them into the provided data object.
+ *
+ * @param {Object} data The existing form data to augment.
+ * @return {Object} The data object enriched with required field values.
+ */
 const getRequiredFieldDataFromShortcodeCheckoutForm = ( data ) => {
 	const checkoutForm = document.querySelector( 'form.checkout' );
 	// Return if cart page.
@@ -238,9 +257,8 @@ const getRequiredFieldDataFromShortcodeCheckoutForm = ( data ) => {
 		return data;
 	}
 
-	const requiredfields = checkoutForm.querySelectorAll(
-		'.validate-required'
-	);
+	const requiredfields =
+		checkoutForm.querySelectorAll( '.validate-required' );
 
 	if ( requiredfields.length ) {
 		requiredfields.forEach( ( element ) => {
@@ -286,6 +304,13 @@ const getRequiredFieldDataFromShortcodeCheckoutForm = ( data ) => {
 	return data;
 };
 
+/**
+ * Collects required field values from the checkout form (Blocks or shortcode)
+ * and merges them into the provided data object.
+ *
+ * @param {Object} data The existing form data to augment.
+ * @return {Object} The data object enriched with required field values.
+ */
 export const getRequiredFieldDataFromCheckoutForm = ( data ) => {
 	return getExpressCheckoutData( 'has_block' )
 		? getRequiredFieldDataFromBlockCheckoutForm( data )
@@ -390,12 +415,18 @@ export const expressCheckoutNoticeDelay = async () => {
 /**
  * Determine if the express payment type should use manual payment method creation.
  *
- * @param {string} expressPaymentType The express payment type, e.g 'googlePay' or 'google_pay'
+ * @param {string}  expressPaymentType The express payment type, e.g 'googlePay' or 'google_pay'
+ * @param {boolean} hasFreeTrial       Whether the product being purchased has a free trial.
  * @return {boolean} True if manual payment method creation should be used, false otherwise.
  */
-export const isManualPaymentMethodCreation = ( expressPaymentType ) => {
-	return ! [
-		EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY,
-		PAYMENT_METHOD_AMAZON_PAY,
-	].includes( expressPaymentType );
+export const isManualPaymentMethodCreation = (
+	expressPaymentType,
+	hasFreeTrial
+) => {
+	return (
+		! [
+			EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY,
+			PAYMENT_METHOD_AMAZON_PAY,
+		].includes( expressPaymentType ) || hasFreeTrial
+	);
 };

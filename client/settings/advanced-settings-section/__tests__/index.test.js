@@ -4,17 +4,17 @@ import userEvent from '@testing-library/user-event';
 import AdvancedSettings from '..';
 import {
 	useDebugLog,
-	useIsUpeEnabled,
 	useGetSavingError,
 	useSettings,
 	useIsOCEnabled,
+	useIsAdaptivePricingEnabled,
 	useOCLayout,
 } from 'wcstripe/data';
 
 jest.mock( 'wcstripe/data', () => ( {
 	useDebugLog: jest.fn(),
-	useIsUpeEnabled: jest.fn(),
 	useIsOCEnabled: jest.fn(),
+	useIsAdaptivePricingEnabled: jest.fn(),
 	useOCLayout: jest.fn(),
 	useGetSavingError: jest.fn(),
 	useSettings: jest.fn(),
@@ -26,11 +26,14 @@ jest.mock( '@woocommerce/navigation', () => ( {
 
 describe( 'AdvancedSettings', () => {
 	beforeEach( () => {
-		global.wc_stripe_settings_params = { is_oc_available: false };
+		global.wc_stripe_settings_params = {
+			is_cs_available: false,
+			is_oc_available: false,
+		};
 
 		useDebugLog.mockReturnValue( [ true, jest.fn() ] );
-		useIsUpeEnabled.mockReturnValue( [ true, jest.fn() ] );
 		useIsOCEnabled.mockReturnValue( [ false, jest.fn() ] );
+		useIsAdaptivePricingEnabled.mockReturnValue( [ false, jest.fn() ] );
 		useOCLayout.mockReturnValue( [ 'accordion', jest.fn() ] );
 		useGetSavingError.mockReturnValue( null );
 
@@ -84,8 +87,11 @@ describe( 'AdvancedSettings', () => {
 		).toBeInTheDocument();
 	} );
 
-	it( 'should display the Optimized Checkout layout setting if the Optimized Checkout feature is enabled', () => {
-		global.wc_stripe_settings_params = { is_oc_available: true };
+	it( 'should display the Optimized Checkout layout and the Adaptive Pricing settings if the Optimized Checkout feature is enabled and checkout sessions available', () => {
+		global.wc_stripe_settings_params = {
+			is_cs_available: true,
+			is_oc_available: true,
+		};
 
 		useIsOCEnabled.mockReturnValue( [ true, jest.fn() ] );
 
@@ -97,5 +103,11 @@ describe( 'AdvancedSettings', () => {
 			)
 		).toBeInTheDocument();
 		expect( screen.queryByText( 'Layout' ) ).toBeInTheDocument();
+
+		expect(
+			screen.queryByText(
+				'Let customers pay in their local currency with Adaptive Pricing.'
+			)
+		).toBeInTheDocument();
 	} );
 } );

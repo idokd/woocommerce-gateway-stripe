@@ -124,6 +124,37 @@ describe( 'Express checkout event handlers', () => {
 			expect( event.resolve ).not.toHaveBeenCalled();
 			expect( event.reject ).toHaveBeenCalled();
 		} );
+
+		test( 'should truncate shipping options to 9 items when more than 9 are returned', async () => {
+			const shippingOptions = Array.from( { length: 15 }, ( _, i ) => ( {
+				id: `option_${ i + 1 }`,
+				label: `Shipping Option ${ i + 1 }`,
+			} ) );
+
+			const response = {
+				result: 'success',
+				total: { amount: 1000 },
+				shipping_options: shippingOptions,
+				displayItems: [ { label: 'Sample Item', amount: 500 } ],
+			};
+
+			api.expressCheckoutECECalculateShippingOptions.mockResolvedValue(
+				response
+			);
+
+			await shippingAddressChangeHandler( api, event, elements );
+
+			expect( event.resolve ).toHaveBeenCalledWith(
+				expect.objectContaining( {
+					shippingRates: expect.arrayContaining( [
+						expect.objectContaining( { id: 'option_1' } ),
+					] ),
+				} )
+			);
+
+			const resolveCall = event.resolve.mock.calls[ 0 ][ 0 ];
+			expect( resolveCall.shippingRates ).toHaveLength( 9 );
+		} );
 	} );
 
 	describe( 'shippingRateChangeHandler', () => {
@@ -224,6 +255,10 @@ describe( 'Express checkout event handlers', () => {
 		let order;
 
 		beforeEach( () => {
+			global.jQuery = {
+				blockUI: jest.fn(),
+				unblockUI: jest.fn(),
+			};
 			api = {
 				expressCheckoutNormalizeAddress: jest.fn(),
 				expressCheckoutECECreateOrder: jest.fn(),
@@ -273,6 +308,25 @@ describe( 'Express checkout event handlers', () => {
 
 		afterEach( () => {
 			jest.clearAllMocks();
+			delete global.jQuery;
+		} );
+
+		test( 'should block UI immediately when payment confirmation starts, before any processing', async () => {
+			// Fail fast on submit so we can confirm blockUI was called before any async work.
+			elements.submit.mockResolvedValue( {
+				error: { message: 'Submit error' },
+			} );
+
+			await onConfirmHandler( {
+				api,
+				stripe,
+				elements,
+				completePayment,
+				abortPayment,
+				event,
+			} );
+
+			expect( global.jQuery.blockUI ).toHaveBeenCalled();
 		} );
 
 		test( 'should abort payment if elements.submit fails', async () => {

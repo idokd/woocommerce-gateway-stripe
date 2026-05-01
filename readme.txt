@@ -1,10 +1,10 @@
 === WooCommerce Stripe Payment Gateway ===
 Contributors: woocommerce, automattic, royho, akeda, mattyza, bor0, woothemes
 Tags: credit card, stripe, payments, woocommerce, woo
-Requires at least: 6.6
-Tested up to: 6.8.2
+Requires at least: 6.7
+Tested up to: 6.9.4
 Requires PHP: 7.4
-Stable tag: 9.8.1
+Stable tag: 10.6.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Attributions: thorsten-stripe
@@ -30,6 +30,43 @@ The enhanced checkout experience from Stripe can help customers:
 - Support Strong Customer Authentication (SCA).
 
 Stripe is available for store owners and merchants in [46 countries worldwide](https://stripe.com/global), with more to come.
+
+== Compatibility Notes ==
+
+The following items note specific versions that include important changes, features, or deprecations.
+
+* 10.6.0
+   - Adaptive Pricing available
+* 10.4.0
+   - Optimized Checkout Suite no longer enabled by default for new installs
+   - Removed the main Payment Request Buttons backend class, WC_Stripe_Payment_Request, which was deprecated in 10.2.0
+   - Removed the deprecated WC_Stripe_Apple_Pay class
+* 10.3.0
+   - Removed legacy checkout payment method classes and settings retrieval methods
+* 10.2.0
+   - Optimized Checkout Suite enabled by default for all new installations
+   - Add minimum transaction amounts for BRL, INR, NZD, THB, CZK, HUF, AED, MYR, PLN, RON
+* 10.1.0
+   - Improved express checkout address handling for countries without state/postal codes
+* 10.0.0
+   - Payment Request Buttons are fully replaced by Express Checkout
+   - Legacy Checkout is fully deprecated and no longer available
+* 9.8.0
+  - Optimized Checkout Suite available via a configuration setting
+  - We will disable the Affirm or Klarna payment methods if the respective official plugin is enabled
+* 9.7.0
+  - Improved express checkout support for custom checkout fields
+  - Validate customer details against required billing fields from checkout before sending to Stripe
+* 9.6.0
+  - Legacy checkout deprecated by default
+  - Voucher payment methods can be used for subscription purchases when manual renewals are available
+  - Include extension data from block checkout for express checkout orders
+  - Add hooks to support custom checkout fields for classic checkout
+* 9.5.0
+   - Synchronize payment methods with Stripe
+   - Support Pre-Authorized Debit (PAD) in Canada and the US
+   - Support BLIK in Poland and from other EU countries
+   - Support BECS Direct Debit payments in Australia
 
 == Frequently Asked Questions ==
 
@@ -110,26 +147,19 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 
 == Changelog ==
 
-= 9.9.0 - xxxx-xx-xx =
-* Dev - Update Javascript unit tests for compatibility with Node 20
-* Dev - Replaces some payment method instantiation logic for the Optimized Checkout with calls to the `get_payment_method_instance` method
-* Dev - Multiple lint fixes in preparation for the Node 20 upgrade
-* Dev - Introduces a new helper method to identify Stripe orders
-* Add - Setting to allow merchants to control the layout of the Optimized Checkout payment element on the checkout page
-* Fix - Removes the credit card payment method requirement for the Optimized Checkout feature
-* Fix - Payment method test instructions not showing up for the Optimized Checkout payment element
-* Add - Includes a new notice to highlight the Optimized Checkout feature above the payment methods list in the Stripe settings page
-* Update - Increases the default font size for the Optimized Checkout payment element to match the rest of the checkout form
-* Fix - Checks for the subscription payment method (if it is Stripe) when verifying for the payment method detachment
-* Dev - Implements WooCommerce constants for the tax statuses
-* Fix - Ensure all Javascript strings use the correct text domain for translation
-* Tweak - Use more specific selector in express checkout e2e tests
-* Tweak - Small improvements to e2e tests
-* Fix - Fix unnecessary Stripe API calls when rendering subscription details
-* Add - Adds a new action (`wc_stripe_webhook_received`) to allow additional actions to be taken for webhook notifications from Stripe
-* Fix - Allow checkout for logged-in users without an email in their account when a billing email is provided
-* Update - Show all available payment methods before unavailable payment methods
-* Tweak - Use smaller image for Optimized Checkout banner
-* Dev - Update WooCommerce Subscriptions e2e tests after 7.8.0 release
+= 10.7.0 - xxxx-xx-xx =
+* Fix - Use SKU as the Agentic Commerce catalog identifier so checkout.session.completed line items resolve correctly; keep the product-ID fallback for SKU-less products and catalogs synced under the legacy contract
+* Add - Display a bank authorization notice for Pre-Authorized Debit (ACSS) payments on checkout
+* Fix - Detect Agentic Commerce sessions via payment_intent.agent_details so their checkout.session.completed webhooks aren't skipped
+* Add - Add Agentic Commerce settings UI with feature introduction, onboarding guide, enable/disable toggle, and webhook secret management
+* Fix - Surface PHP Throwables from the Agentic Commerce checkout.session.completed flow so fatals are logged, the order rollback runs, and Action Scheduler marks the job failed
+* Fix - Look up products by SKU in Agentic Commerce manual approval and tax calculation flows
+* Dev - Rename payment request references to express checkout
+* Add - Add Agentic Commerce admin dashboard for monitoring product feed sync status, history, errors, and triggering manual syncs
+* Fix - Store Stripe Terminal IPP channel metadata on orders so WooCommerce can identify POS payments and suppress standard transactional emails
+* Fix - Stale saved-card metadata after updating a card's expiry or CVC
+* Dev - Reduce PR PHP test matrix from 30 to 12 jobs (PHP 7.4, 8.2, 8.5; WC/WP at L and L-2) for faster CI feedback
+* Dev - Bump transitive minimatch dev dependency to resolve ReDoS CVE-2026-27903 (GHSA-7r86-cg39-jmmj)
+* Fix - Prevent fatal error in wp-admin from overly narrow argument type
 
 [See changelog for full details across versions](https://raw.githubusercontent.com/woocommerce/woocommerce-gateway-stripe/trunk/changelog.txt).
