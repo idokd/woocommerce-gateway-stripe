@@ -1,6 +1,15 @@
-import { __ } from '@wordpress/i18n';
 import { getErrorMessageFromNotice, normalizeOrderData } from './utils';
+import { __ } from '@wordpress/i18n';
 
+/**
+ * Handles exceptions thrown during the payment flow by extracting a human-readable
+ * error message and calling the abort payment callback.
+ *
+ * @param {Object}   event        The Stripe express checkout event.
+ * @param {Object}   exception    The error or exception that was thrown.
+ * @param {Function} abortPayment Callback to abort the payment with an error message.
+ * @return {*} The result of calling abortPayment.
+ */
 const handlePaymentFlowException = ( event, exception, abortPayment ) => {
 	let errorMessage;
 
@@ -11,9 +20,10 @@ const handlePaymentFlowException = ( event, exception, abortPayment ) => {
 	} else if ( exception.message ) {
 		errorMessage = exception.message;
 	} else {
-		const paymentDetailsErrorMessage = exception.payment_result?.payment_details.find(
-			( detail ) => detail.key === 'errorMessage'
-		)?.value;
+		const paymentDetailsErrorMessage =
+			exception.payment_result?.payment_details.find(
+				( detail ) => detail.key === 'errorMessage'
+			)?.value;
 		if ( paymentDetailsErrorMessage ) {
 			errorMessage = paymentDetailsErrorMessage;
 		}
@@ -32,6 +42,19 @@ const handlePaymentFlowException = ( event, exception, abortPayment ) => {
 	);
 };
 
+/**
+ * Creates or pays for an order using the Express Checkout payment data,
+ * normalizing addresses before submission.
+ *
+ * @param {Object} params
+ * @param {Object} params.api                 The WCStripeAPI instance.
+ * @param {Object} params.event               The Stripe express checkout event.
+ * @param {string} params.paymentMethodId     The Stripe payment method ID (manual flow).
+ * @param {string} params.confirmationTokenId The Stripe confirmation token ID (token flow).
+ * @param {number} params.order               The WooCommerce order ID when paying for an existing order.
+ * @param {Object} params.orderDetails        Additional order details (e.g. order key, billing email).
+ * @return {Promise<{result: string, errorMessage: string|undefined, redirect: string}>} The order result.
+ */
 const processOrder = async ( {
 	api,
 	event,
@@ -66,17 +89,17 @@ const processOrder = async ( {
 			normalizedOrderData
 		);
 	} else {
-		orderResponse = await api.expressCheckoutECECreateOrder(
-			normalizedOrderData
-		);
+		orderResponse =
+			await api.expressCheckoutECECreateOrder( normalizedOrderData );
 	}
 
 	// Extract redirect URL from payment_details if redirect_url is empty
 	let redirectUrl = orderResponse?.payment_result?.redirect_url;
 	if ( ! redirectUrl ) {
-		const redirectDetail = orderResponse?.payment_result?.payment_details?.find(
-			( detail ) => detail.key === 'redirect'
-		);
+		const redirectDetail =
+			orderResponse?.payment_result?.payment_details?.find(
+				( detail ) => detail.key === 'redirect'
+			);
 		redirectUrl = redirectDetail?.value || '';
 	}
 
@@ -89,6 +112,22 @@ const processOrder = async ( {
 	};
 };
 
+/**
+ * Handles the Express Checkout payment flow using manual payment method creation.
+ * Creates a Stripe payment method from the Elements, submits the order, then confirms
+ * any pending payment intent.
+ *
+ * @param {Object}   params
+ * @param {Object}   params.api             The WCStripeAPI instance.
+ * @param {Object}   params.stripe          The Stripe.js instance.
+ * @param {Object}   params.elements        The Stripe Elements instance.
+ * @param {Function} params.completePayment Callback to complete the payment with a redirect URL.
+ * @param {Function} params.abortPayment    Callback to abort the payment with an error message.
+ * @param {Object}   params.event           The Stripe express checkout event.
+ * @param {number}   params.order           The WooCommerce order ID when paying for an existing order.
+ * @param {Object}   params.orderDetails    Additional order details.
+ * @return {Promise<void>} Resolves when the payment flow has completed or been aborted.
+ */
 export const handleManualPaymentMethodFlow = async ( {
 	api,
 	stripe,
@@ -141,6 +180,22 @@ export const handleManualPaymentMethodFlow = async ( {
 	}
 };
 
+/**
+ * Handles the Express Checkout payment flow using a Stripe confirmation token.
+ * Creates a confirmation token from the Elements, submits the order, then confirms
+ * any pending payment intent.
+ *
+ * @param {Object}   params
+ * @param {Object}   params.api             The WCStripeAPI instance.
+ * @param {Object}   params.stripe          The Stripe.js instance.
+ * @param {Object}   params.elements        The Stripe Elements instance.
+ * @param {Function} params.completePayment Callback to complete the payment with a redirect URL.
+ * @param {Function} params.abortPayment    Callback to abort the payment with an error message.
+ * @param {Object}   params.event           The Stripe express checkout event.
+ * @param {number}   params.order           The WooCommerce order ID when paying for an existing order.
+ * @param {Object}   params.orderDetails    Additional order details.
+ * @return {Promise<void>} Resolves when the payment flow has completed or been aborted.
+ */
 export const handleConfirmationTokenFlow = async ( {
 	api,
 	stripe,
@@ -154,11 +209,6 @@ export const handleConfirmationTokenFlow = async ( {
 	// Create a ConfirmationToken that we can use later to create and confirm the payment intent.
 	const { error, confirmationToken } = await stripe.createConfirmationToken( {
 		elements,
-		params: {
-			// Required by Amazon Pay, but is not used by express checkout
-			// as it uses a payment modal instead of redirection.
-			return_url: window.location.href,
-		},
 	} );
 
 	if ( error ) {

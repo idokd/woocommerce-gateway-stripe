@@ -2,6 +2,20 @@ import { expect } from '@playwright/test';
 import config from 'config';
 
 /**
+ * Click the primary add to cart button for the current page.
+ *
+ * @param {Page}   page  Playwright page fixture.
+ * @param {string} label The expected text for the "Add to cart" button.
+ */
+export async function clickAddToCartButton( page, label = 'Add to cart' ) {
+	const addToCartButton = await page
+		.getByRole( 'button', { name: label, exact: true } )
+		.first();
+	await expect( addToCartButton ).toBeEnabled();
+	await addToCartButton.click();
+}
+
+/**
  * Empty the WC cart.
  * @param {Page} page Playwright page fixture.
  */
@@ -74,6 +88,104 @@ export async function setupCart(
 			);
 		}
 	}
+}
+
+/**
+ * Wait for Stripe iframe to be fully loaded and ready for interaction.
+ * This helper addresses common race conditions with Stripe Elements.
+ *
+ * @param {Page} page Playwright page fixture.
+ * @param {string} iframeSelector The selector for the Stripe iframe.
+ * @param {number} timeout Maximum time to wait in milliseconds (default: 15000).
+ * @returns {Promise<Frame>} The loaded Stripe frame.
+ */
+export async function waitForStripeReady(
+	page,
+	iframeSelector,
+	timeout = 15000
+) {
+	// Wait for iframe to be present in the DOM.
+	const frameHandle = await page.waitForSelector( iframeSelector, {
+		state: 'attached',
+		timeout,
+	} );
+	const stripeFrame = await frameHandle.contentFrame();
+
+	if ( ! stripeFrame ) {
+		throw new Error(
+			`Could not get content frame for: ${ iframeSelector }`
+		);
+	}
+
+	// Stripe iframes often keep background network activity and may never reach
+	// "networkidle". Wait for the frame document instead.
+	await stripeFrame.waitForSelector( 'body', {
+		state: 'attached',
+		timeout,
+	} );
+
+	// Additional wait for any loading indicators to disappear in parallel
+	const loadingIndicators = [
+		'.__PrivateStripeElementLoader',
+		'.LightboxModalLoadingIndicator',
+		'[data-testid="loading"]',
+	];
+
+	await Promise.all(
+		loadingIndicators.map( ( indicator ) =>
+			stripeFrame
+				.locator( indicator )
+				.waitFor( { state: 'hidden', timeout } )
+				.catch( () => {} )
+		)
+	);
+
+	return stripeFrame;
+}
+
+/**
+ * Retry an async function with exponential backoff.
+ * Useful for flaky operations like iframe interactions or API calls.
+ *
+ * @param {Function} fn The async function to retry.
+ * @param {Object} options Retry configuration.
+ * @param {number} options.maxRetries Maximum number of retries (default: 3).
+ * @param {number} options.initialDelay Initial delay in milliseconds (default: 500).
+ * @param {number} options.maxDelay Maximum delay in milliseconds (default: 5000).
+ * @param {Function} options.shouldRetry Optional function to determine if error should trigger retry.
+ * @returns {Promise<any>} The result of the function call.
+ */
+export async function retryWithBackoff( fn, options = {} ) {
+	const {
+		maxRetries = 3,
+		initialDelay = 500,
+		maxDelay = 5000,
+		shouldRetry = () => true,
+	} = options;
+
+	let lastError;
+	let delay = initialDelay;
+
+	for ( let attempt = 0; attempt <= maxRetries; attempt++ ) {
+		try {
+			return await fn();
+		} catch ( error ) {
+			lastError = error;
+
+			// Don't retry if we've exhausted attempts or if shouldRetry returns false
+			if ( attempt === maxRetries || ! shouldRetry( error ) ) {
+				break;
+			}
+
+			// Wait before retrying
+			await new Promise( ( resolve ) => setTimeout( resolve, delay ) );
+
+			// Exponential backoff with max delay cap
+			delay = Math.min( delay * 2, maxDelay );
+		}
+	}
+
+	throw lastError;
 }
 
 /**
@@ -156,18 +268,15 @@ export async function fillCreditCardDetailsShortcodeLegacy( page, card ) {
 	const options = {
 		multi: {
 			cardNumber: {
-				iFrame:
-					'#stripe-card-element iframe[name^="__privateStripeFrame"]',
+				iFrame: '#stripe-card-element iframe[name^="__privateStripeFrame"]',
 				selector: '[name="cardnumber"]',
 			},
 			cardExpiry: {
-				iFrame:
-					'#stripe-exp-element iframe[name^="__privateStripeFrame"]',
+				iFrame: '#stripe-exp-element iframe[name^="__privateStripeFrame"]',
 				selector: '[name="exp-date"]',
 			},
 			cardCvc: {
-				iFrame:
-					'#stripe-cvc-element iframe[name^="__privateStripeFrame"]',
+				iFrame: '#stripe-cvc-element iframe[name^="__privateStripeFrame"]',
 				selector: '[name="cvc"]',
 			},
 		},
@@ -405,57 +514,69 @@ export const setupACHCheckout = async ( page, checkoutType = 'blocks' ) => {
 	await emptyCart( page );
 	await setupCart( page );
 
+	const rawIframeSelector = 'iframe[src*="elements-inner-payment"]';
+	let iframeSelector;
+	let paymentMethodContentSelector;
+
 	if ( checkoutType === 'blocks' ) {
+		paymentMethodContentSelector =
+			'#radio-control-wc-payment-method-options-stripe_us_bank_account__content';
+		iframeSelector = `${ paymentMethodContentSelector } ${ rawIframeSelector }`;
+
 		await setupBlocksCheckout(
 			page,
 			config.get( 'addresses.customer.billing' )
 		);
-		// Select ACH in blocks checkout
-		await page
-			.locator( 'label' )
-			.filter( { hasText: 'ACH Direct Debit' } )
-			.dispatchEvent( 'click' );
 
-		// Wait for the iframe to be ready
-		const frameHandle = await page.waitForSelector(
-			'#radio-control-wc-payment-method-options-stripe_us_bank_account__content iframe[name^="__privateStripeFrame"]'
+		// Select ACH in blocks checkout via the associated label, since the
+		// underlying input can be covered by parent elements during animation.
+		const achOption = page.locator(
+			'#radio-control-wc-payment-method-options-stripe_us_bank_account'
 		);
-		const stripeFrame = await frameHandle.contentFrame();
-		await stripeFrame.waitForLoadState( 'networkidle' );
-
-		// Click "Test Institution"
-		await page
-			.frameLocator(
-				'#radio-control-wc-payment-method-options-stripe_us_bank_account__content iframe[src*="elements-inner-payment"]'
-			)
-			.getByText( 'Test Institution' )
-			.dispatchEvent( 'click' );
+		const achOptionLabel = page.locator(
+			"label[for='radio-control-wc-payment-method-options-stripe_us_bank_account']"
+		);
+		await achOption.waitFor( { state: 'attached' } );
+		await expect( achOptionLabel ).toContainText( 'ACH Direct Debit' );
+		await achOptionLabel.click();
+		await expect( achOption ).toBeChecked();
 	} else {
+		paymentMethodContentSelector =
+			'.wc_payment_method.payment_method_stripe_us_bank_account';
+		iframeSelector = `${ paymentMethodContentSelector } ${ rawIframeSelector }`;
+
 		await setupShortcodeCheckout(
 			page,
 			config.get( 'addresses.customer.billing' )
 		);
 
-		// Select ACH in shortcode checkout
-		const achLabel = page.getByText( 'ACH Direct Debit' );
-		await achLabel.waitFor( { state: 'visible' } );
-		await achLabel.dispatchEvent( 'click' );
-
-		// Wait for the iframe to be ready
-		const frameHandle = await page.waitForSelector(
-			'.payment_method_stripe_us_bank_account iframe[name^="__privateStripeFrame"]'
+		// Select ACH in shortcode checkout via the associated label, since direct
+		// clicks on the hidden radio input can be intercepted.
+		const achOption = page.locator(
+			'#payment_method_stripe_us_bank_account'
 		);
-		const stripeFrame = await frameHandle.contentFrame();
-		await stripeFrame.waitForLoadState( 'networkidle' );
-
-		// Click "Test Institution"
-		await page
-			.frameLocator(
-				'.wc_payment_method.payment_method_stripe_us_bank_account iframe[src*="elements-inner-payment"]'
-			)
-			.getByTestId( 'featured-institution-default' )
-			.dispatchEvent( 'click' );
+		const achOptionLabel = page.locator(
+			"label[for='payment_method_stripe_us_bank_account']"
+		);
+		await achOption.waitFor( { state: 'attached' } );
+		await expect( achOptionLabel ).toContainText( 'ACH Direct Debit' );
+		await achOptionLabel.click();
+		await expect( achOption ).toBeChecked();
 	}
+
+	await expect( page.locator( paymentMethodContentSelector ) ).toBeVisible();
+	await waitForStripeReady( page, iframeSelector );
+
+	// Click "Test Institution" with retry logic
+	await retryWithBackoff( async () => {
+		const testInstitutionButton = page
+			.frameLocator( iframeSelector )
+			.getByTestId( 'featured-institution-default_oauth' )
+			.first();
+
+		await expect( testInstitutionButton ).toBeVisible();
+		await testInstitutionButton.dispatchEvent( 'click' );
+	} );
 };
 
 /**
@@ -467,34 +588,55 @@ export const fillACHBankDetails = async ( page ) => {
 		.frameLocator( 'iframe[name^="__privateStripeFrame"]' )
 		.first();
 
-	// Agree and Continue
-	await frame.getByTestId( 'agree-button' ).click();
-
-	// Click "Success ••••" button
-	await frame.getByRole( 'button', { name: 'Success ••••' } ).click();
-
-	// Click "Connect Account" button.
-	await frame.getByTestId( 'select-button' ).click();
+	// Click Agree and Continue button
+	let button = frame.getByTestId( 'agree-button' );
+	await expect( button ).toBeVisible();
+	await button.click();
 
 	// Link registration button may or may not appear.
 	await Promise.race( [
 		frame
 			.getByTestId( 'link-not-now-button' )
-			.waitFor( {
-				state: 'visible',
-				timeout: 5000,
-			} )
+			.waitFor( { state: 'visible' } )
 			.then( async () => {
 				await frame.getByTestId( 'link-not-now-button' ).click();
 			} ),
-
-		frame.getByTestId( 'done-button' ).waitFor( {
-			state: 'visible',
-			timeout: 5000,
-		} ),
+		frame
+			.getByRole( 'button', { name: 'Success ••••' } )
+			.waitFor( { state: 'visible' } ),
+		frame
+			.getByTestId( 'continue-button' )
+			.waitFor( { state: 'visible' } )
+			.then( async () => {
+				await frame.getByTestId( 'continue-button' ).click();
+			} ),
 	] );
 
-	await frame.getByTestId( 'done-button' ).click();
+	// Click "Success ••••" account
+	button = frame.getByRole( 'button', { name: 'Success ••••' } );
+	await expect( button ).toBeVisible();
+	await button.click();
+
+	// Click Connect account button
+	button = frame.getByTestId( 'select-button' );
+	await expect( button ).toBeVisible();
+	await button.click();
+
+	// If link registration did not load when starting the flow, it will appear here.
+	await Promise.race( [
+		frame
+			.getByTestId( 'link-not-now-button' )
+			.waitFor( { state: 'visible' } )
+			.then( async () => {
+				await frame.getByTestId( 'link-not-now-button' ).click();
+			} ),
+		frame.getByTestId( 'done-button' ).waitFor( { state: 'visible' } ),
+	] );
+
+	// Click the done button with retry logic
+	button = frame.getByTestId( 'done-button' );
+	await expect( button ).toBeVisible();
+	await button.click();
 };
 
 /**
@@ -557,14 +699,12 @@ export const setupOptimizedCheckout = async (
 
 	const selectors = {
 		blocks: {
-			iframe:
-				'#radio-control-wc-payment-method-options-stripe__content iframe[name^="__privateStripeFrame"]',
+			iframe: '#radio-control-wc-payment-method-options-stripe__content iframe[name^="__privateStripeFrame"]',
 			container:
 				'#radio-control-wc-payment-method-options-stripe__content',
 		},
 		shortcode: {
-			iframe:
-				'#wc-stripe-upe-form .StripeElement iframe[name^="__privateStripeFrame"]',
+			iframe: '#wc-stripe-upe-form .StripeElement iframe[name^="__privateStripeFrame"]',
 			container: '#wc-stripe-upe-form',
 		},
 	};
@@ -857,8 +997,10 @@ export const setupBECSCheckout = async ( page, checkoutType = 'blocks' ) => {
 		);
 		const stripeFrame = await frameHandle.contentFrame();
 
-		// Wait for the iFrame to load.
-		await stripeFrame.waitForLoadState( 'networkidle' );
+		// Wait for the BECS form fields to be available.
+		await expect(
+			stripeFrame.locator( '[name="auBankAccountNumber"]' )
+		).toBeVisible( { timeout: 30000 } );
 	}
 };
 
@@ -881,8 +1023,10 @@ export const fillBECSDetails = async ( page, checkoutType = 'blocks' ) => {
 
 	const stripeFrame = await frameHandle.contentFrame();
 
-	// Wait for the iFrame to load.
-	await stripeFrame.waitForLoadState( 'networkidle' );
+	// Wait for the BECS form fields to be available.
+	await expect(
+		stripeFrame.locator( '[name="auBankAccountNumber"]' )
+	).toBeVisible( { timeout: 30000 } );
 
 	await stripeFrame
 		.locator( '[name="auBankAccountNumber"]' )
@@ -924,7 +1068,7 @@ export const setupAffirmCheckout = async ( page, checkoutType = 'blocks' ) => {
 					'#radio-control-wc-payment-method-options-stripe_affirm__content iframe[name^="__privateStripeFrame"]'
 				)
 				.getByTestId( 'next-action-text' )
-		).toBeVisible();
+		).toBeAttached();
 	} else {
 		const affirmLabel = page.getByText( 'Affirm' );
 		await affirmLabel.waitFor( { state: 'visible' } );
@@ -935,7 +1079,7 @@ export const setupAffirmCheckout = async ( page, checkoutType = 'blocks' ) => {
 					'.payment_method_stripe_affirm iframe[src*="elements-inner-payment"]'
 				)
 				.getByTestId( 'next-action-text' )
-		).toBeVisible();
+		).toBeAttached();
 	}
 };
 

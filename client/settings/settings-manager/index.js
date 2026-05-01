@@ -1,24 +1,27 @@
 /* global wc_stripe_settings_params */
-import { useEffect } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { getQuery, updateQueryString } from '@woocommerce/navigation';
 import styled from '@emotion/styled';
 import { isEmpty } from 'lodash';
-import { TabPanel } from '@wordpress/components';
 import SettingsLayout from '../settings-layout';
 import PaymentSettingsPanel from '../payment-settings';
 import PaymentMethodsPanel from '../payment-methods';
 import SaveSettingsSection from '../save-settings-section';
 import { useEnabledPaymentMethodIds, useSettings } from '../../data';
+import { TabPanel } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
+import { useEffect } from '@wordpress/element';
 import { useAccount } from 'wcstripe/data/account';
 import OCToggleContext from 'wcstripe/settings/oc-toggle/context';
-import UpeToggleContext from 'wcstripe/settings/upe-toggle/context';
 import { getPromotionalBannerType } from 'wcstripe/settings/payment-settings/promotional-banner/get-promotional-banner-type';
 import {
 	BNPL_PROMOTION_BANNER,
 	OC_PROMOTION_BANNER,
+	STRIPE_TAX_BANNER,
 } from 'wcstripe/settings/payment-settings/constants';
+import ExitSurveyModal, {
+	isCooldownActive,
+} from 'wcstripe/components/exit-survey-modal';
 
 const StyledTabPanel = styled( TabPanel )`
 	.components-tab-panel__tabs {
@@ -27,7 +30,7 @@ const StyledTabPanel = styled( TabPanel )`
 	}
 `;
 
-const TABS_CONTENT = [
+const TABS = [
 	{
 		name: 'methods',
 		title: __( 'Payment Methods', 'woocommerce-gateway-stripe' ),
@@ -39,15 +42,18 @@ const TABS_CONTENT = [
 ];
 
 const SettingsManager = () => {
+	const isAgenticCommerceEnabled =
+		wc_stripe_settings_params?.is_agentic_commerce_enabled; // eslint-disable-line camelcase
+
+	const agenticSaveRef = useRef( null );
+
 	const { settings, isLoading } = useSettings();
 	const [ initialSettings, setInitialSettings ] = useState( settings );
 	const { data } = useAccount();
 	const { isOCEnabled, setIsOCEnabled } = useContext( OCToggleContext );
-	const { isUpeEnabled, setIsUpeEnabled } = useContext( UpeToggleContext );
 	const [ enabledPaymentMethodIds ] = useEnabledPaymentMethodIds();
 	const promotionalBannerType = getPromotionalBannerType(
 		data,
-		isUpeEnabled,
 		isOCEnabled,
 		enabledPaymentMethodIds
 	);
@@ -60,15 +66,21 @@ const SettingsManager = () => {
 		initialBannerState = true;
 	}
 	if (
+		promotionalBannerType === STRIPE_TAX_BANNER &&
+		// eslint-disable-next-line camelcase
+		wc_stripe_settings_params?.show_stripe_tax_banner === '1'
+	) {
+		initialBannerState = true;
+	}
+	if (
 		promotionalBannerType === OC_PROMOTION_BANNER &&
 		// eslint-disable-next-line camelcase
 		wc_stripe_settings_params?.show_oc_promotional_banner === '1'
 	) {
 		initialBannerState = true;
 	}
-	const [ showPromotionalBanner, setShowPromotionalBanner ] = useState(
-		initialBannerState
-	);
+	const [ showPromotionalBanner, setShowPromotionalBanner ] =
+		useState( initialBannerState );
 
 	useEffect( () => {
 		if ( isLoading && ! isEmpty( settings ) ) {
@@ -76,7 +88,23 @@ const SettingsManager = () => {
 		}
 	}, [ isLoading, settings ] );
 
+	const [ showExitSurvey, setShowExitSurvey ] = useState( false );
+
 	const onSettingsSave = () => {
+		// Show exit survey if Stripe was just disabled.
+		if (
+			initialSettings.is_stripe_enabled &&
+			! settings.is_stripe_enabled &&
+			// eslint-disable-next-line camelcase
+			typeof wc_stripe_settings_params !== 'undefined' &&
+			! isCooldownActive(
+				// eslint-disable-next-line camelcase
+				wc_stripe_settings_params.exit_survey_last_shown
+			)
+		) {
+			setShowExitSurvey( true );
+		}
+
 		setInitialSettings( settings );
 	};
 
@@ -94,17 +122,35 @@ const SettingsManager = () => {
 		updateQueryString( { panel: tabName }, '/', getQuery() );
 	};
 
+	const getInitialTab = () => {
+		if ( panel === 'settings' ) {
+			return 'settings';
+		}
+
+		return 'methods';
+	};
+
 	return (
 		<SettingsLayout>
+			{ showExitSurvey && (
+				<ExitSurveyModal
+					trigger="settings_disable"
+					surveyParams={
+						// eslint-disable-next-line camelcase
+						wc_stripe_settings_params
+					}
+					onRequestClose={ () => setShowExitSurvey( false ) }
+				/>
+			) }
 			<StyledTabPanel
 				className="wc-stripe-account-settings-panel"
-				initialTabName={ panel === 'settings' ? 'settings' : 'methods' }
-				tabs={ TABS_CONTENT }
+				initialTabName={ getInitialTab() }
+				tabs={ TABS }
 				onSelect={ updatePanelUri }
 			>
 				{ ( tab ) => (
 					<div data-testid={ `${ tab.name }-tab` }>
-						{ tab.name === 'settings' ? (
+						{ tab.name === 'settings' && (
 							<PaymentSettingsPanel
 								showPromotionalBanner={ showPromotionalBanner }
 								setShowPromotionalBanner={
@@ -113,9 +159,13 @@ const SettingsManager = () => {
 								promotionalBannerType={ promotionalBannerType }
 								isOCEnabled={ isOCEnabled }
 								setIsOCEnabled={ setIsOCEnabled }
-								setIsUpeEnabled={ setIsUpeEnabled }
+								isAgenticCommerceEnabled={
+									isAgenticCommerceEnabled
+								}
+								agenticSaveRef={ agenticSaveRef }
 							/>
-						) : (
+						) }
+						{ tab.name === 'methods' && (
 							<PaymentMethodsPanel
 								onSaveChanges={ onSaveChanges }
 								showPromotionalBanner={ showPromotionalBanner }
@@ -125,11 +175,15 @@ const SettingsManager = () => {
 								promotionalBannerType={ promotionalBannerType }
 								isOCEnabled={ isOCEnabled }
 								setIsOCEnabled={ setIsOCEnabled }
-								setIsUpeEnabled={ setIsUpeEnabled }
 							/>
 						) }
 						<SaveSettingsSection
 							onSettingsSave={ onSettingsSave }
+							agenticSaveRef={
+								tab.name === 'settings'
+									? agenticSaveRef
+									: undefined
+							}
 						/>
 					</div>
 				) }

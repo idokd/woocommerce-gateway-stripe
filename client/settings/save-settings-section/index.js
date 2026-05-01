@@ -1,19 +1,22 @@
-import { __ } from '@wordpress/i18n';
 import React from 'react';
 import styled from '@emotion/styled';
-import { Button } from '@wordpress/components';
 import SettingsSection from '../settings-section';
 import { useSettings } from '../../data';
+import { Button } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
 
 const SaveSettingsSectionWrapper = styled( SettingsSection )`
 	text-align: right;
 `;
 
-const SaveSettingsSection = ( { onSettingsSave } ) => {
+const SaveSettingsSection = ( { onSettingsSave, agenticSaveRef } ) => {
 	const { saveSettings, isSaving, isLoading } = useSettings();
 
 	const onClickHandler = async () => {
 		await saveSettings();
+		if ( agenticSaveRef?.current?.save ) {
+			await agenticSaveRef.current.save();
+		}
 		if ( onSettingsSave ) {
 			onSettingsSave();
 		}

@@ -1,14 +1,24 @@
-import { __ } from '@wordpress/i18n';
-import { createInterpolateElement } from '@wordpress/element';
+/* global wc_stripe_settings_params */
+import React, { useEffect, useRef } from 'react';
+import { getQuery } from '@woocommerce/navigation';
+import styled from '@emotion/styled';
+import {
+	useIsAdaptivePricingEnabled,
+	useIsOCEnabled,
+	useOCLayout,
+} from '../../data';
+import OptimizedCheckoutFirstMethodNotice from './optimized-checkout-first-method-notice';
 import {
 	CheckboxControl,
 	ExternalLink,
 	RadioControl,
 } from '@wordpress/components';
-import React, { useEffect, useRef } from 'react';
-import { getQuery } from '@woocommerce/navigation';
-import styled from '@emotion/styled';
-import { useIsOCEnabled, useIsUpeEnabled, useOCLayout } from '../../data';
+import { createInterpolateElement } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+
+const AdaptivePricingCheckbox = styled( CheckboxControl )`
+	margin-left: 24px;
+`;
 
 const StyledRadioControl = styled( RadioControl )`
 	legend {
@@ -22,15 +32,12 @@ const StyledRadioControl = styled( RadioControl )`
 
 const OptimizedCheckoutFeature = () => {
 	const [ isOCEnabled, setIsOCEnabled ] = useIsOCEnabled();
+	const [ isAdaptivePricingEnabled, setIsAdaptivePricingEnabled ] =
+		useIsAdaptivePricingEnabled();
 	const [ OCLayout, setOCLayout ] = useOCLayout();
-	const [ isUpeEnabled ] = useIsUpeEnabled();
 	const headingRef = useRef( null );
-
-	useEffect( () => {
-		if ( ! isUpeEnabled ) {
-			setIsOCEnabled( false );
-		}
-	}, [ isUpeEnabled, setIsOCEnabled ] );
+	const isCheckoutSessionsAvailable =
+		wc_stripe_settings_params.is_cs_available; // eslint-disable-line camelcase
 
 	useEffect( () => {
 		if ( ! headingRef.current ) {
@@ -71,14 +78,35 @@ const OptimizedCheckoutFeature = () => {
 					),
 					{
 						learnMoreLink: (
-							<ExternalLink href="https://woocommerce.com/document/stripe/setup-and-configuration/settings-guide/#advanced-settings" />
+							<ExternalLink href="https://woocommerce.com/document/stripe/admin-experience/optimized-checkout-suite/" />
 						),
 					}
 				) }
 				checked={ isOCEnabled }
 				onChange={ setIsOCEnabled }
-				disabled={ ! isUpeEnabled }
 			/>
+			<OptimizedCheckoutFirstMethodNotice isOCEnabled={ isOCEnabled } />
+			{ isOCEnabled && isCheckoutSessionsAvailable && (
+				<AdaptivePricingCheckbox
+					label={ __(
+						'Let customers pay in their local currency with Adaptive Pricing.',
+						'woocommerce-gateway-stripe'
+					) }
+					help={ createInterpolateElement(
+						__(
+							"With Adaptive Pricing, Stripe detects the customer's currency via IP and automatically applies localized pricing and conversion. <learnMoreLink>Learn more</learnMoreLink>.",
+							'woocommerce-gateway-stripe'
+						),
+						{
+							learnMoreLink: (
+								<ExternalLink href="https://docs.stripe.com/payments/currencies/localize-prices/adaptive-pricing" />
+							),
+						}
+					) }
+					checked={ isAdaptivePricingEnabled }
+					onChange={ setIsAdaptivePricingEnabled }
+				/>
+			) }
 			{ isOCEnabled && (
 				<StyledRadioControl
 					label={ __( 'Layout', 'woocommerce-gateway-stripe' ) }

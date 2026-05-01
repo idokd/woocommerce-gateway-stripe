@@ -35,8 +35,16 @@ class WC_Stripe_Logger {
 	 * @deprecated 9.7.0 Use the shortcut methods for each log severity level: info(), error(), etc. instead.
 	 *
 	 * @since 4.0.0
+	 *
+	 * @param string   $message    The message to log.
+	 * @param int|null $start_time Optional start time timestamp.
+	 * @param int|null $end_time   Optional end time timestamp.
+	 *
+	 * @return void
 	 */
 	public static function log( $message, $start_time = null, $end_time = null ) {
+		wc_deprecated_function( __METHOD__, '9.7.0', 'Use the shortcut methods for each log severity level: info(), error(), etc. instead.' );
+
 		if ( ! self::can_log() ) {
 			return;
 		}
@@ -244,6 +252,10 @@ class WC_Stripe_Logger {
 	 * @return boolean
 	 */
 	public static function can_log(): bool {
+		if ( WC_Stripe_Helper::is_verbose_debug_mode_enabled() ) {
+			return true;
+		}
+
 		$settings = WC_Stripe_Helper::get_stripe_settings();
 
 		if ( empty( $settings ) || ( isset( $settings['logging'] ) && 'yes' !== $settings['logging'] ) ) {
