@@ -359,6 +359,12 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 		fonts: getFontRulesFromPage(),
 	};
 
+	// Drinkripples customization: allow injecting extra font rules via the
+	// `fonts` key of the `wc_stripe_upe_params` filter.
+	if ( stripeServerData?.fonts ) {
+		options.fonts.push( ...stripeServerData.fonts );
+	}
+
 	// If the payment method doesn't support deferred intent, the intent must be created here.
 	if ( ! supportsDeferredIntent ) {
 		try {
@@ -539,6 +545,10 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 		wallets: {
 			applePay: 'never',
 			googlePay: 'never',
+			// Drinkripples customization: allow showing wallets inside the Payment
+			// Element via the `paymentElementWallets` key of the
+			// `wc_stripe_upe_params` filter, e.g. { applePay: 'auto', googlePay: 'auto' }.
+			...( stripeServerData?.paymentElementWallets ?? {} ),
 		},
 	};
 
@@ -572,6 +582,15 @@ async function createStripePaymentElement( api, paymentMethodType ) {
 		// the best default UX for individual payment methods.
 		paymentElementOptions.layout = {
 			type: 'tabs',
+		};
+	}
+
+	// Drinkripples customization: allow overriding the Payment Element layout
+	// via the `layout` key of the `wc_stripe_upe_params` filter.
+	if ( stripeServerData?.layout ) {
+		paymentElementOptions = {
+			...paymentElementOptions,
+			layout: stripeServerData.layout,
 		};
 	}
 
