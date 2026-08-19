@@ -27,7 +27,9 @@ jQuery( function ( $ ) {
 	const stripeServerData = getStripeServerData();
 
 	// Create an API object, which will be used throughout the checkout.
-	const api = new WCStripeAPI(
+	// Drinkripples customization: `let` instead of `const` so the API can be
+	// re-created with fresh server data (see the remount handler below).
+	let api = new WCStripeAPI(
 		stripeServerData,
 		// A promise-based interface to jQuery.post.
 		( url, args ) => {
@@ -208,6 +210,38 @@ jQuery( function ( $ ) {
 	$( window ).on( 'hashchange', () => {
 		maybeConfirmVoucherOrWalletPayment();
 	} );
+
+	// Drinkripples customization: when the `remountOnSaveToggle` key is set via
+	// the `wc_stripe_upe_params` filter, re-create the API from fresh server data
+	// (e.g. a different Stripe account / publishable key) and force a full
+	// re-mount of the payment elements whenever the "save payment method"
+	// checkbox changes.
+	if ( stripeServerData?.remountOnSaveToggle ) {
+		$( document ).on(
+			'change',
+			'#wc-stripe-new-payment-method',
+			async () => {
+				// Empty the UPE containers and reset component state to force a re-mount.
+				$( '.wc-stripe-upe-element' ).empty();
+				initializeUPEComponents();
+
+				api = new WCStripeAPI(
+					getStripeServerData(),
+					// A promise-based interface to jQuery.post.
+					( url, args ) => {
+						return new Promise( ( resolve, reject ) => {
+							jQuery
+								.post( url, args )
+								.then( resolve )
+								.fail( reject );
+						} );
+					}
+				);
+
+				await maybeMountStripePaymentElement();
+			}
+		);
+	}
 
 	// Bind the handling of the setup future usage option to the saving checkbox when OC is enabled.
 	if ( stripeServerData?.shouldShowOptimizedCheckout ) {
